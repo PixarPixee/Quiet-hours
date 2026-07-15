@@ -7,22 +7,22 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Quiet Hours">
-<meta name="theme-color" content="#211823">
+<meta name="theme-color" content="#332536">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --bg:#211823;
-    --paper:#2b2019;
-    --paper-raised:#332619;
-    --cream:#ede3d3;
-    --cream-dim:#c9beac;
-    --amber:#d4954f;
-    --amber-dim:#a97a44;
-    --plum:#6b4a5e;
-    --sage:#7a8a6f;
-    --border:rgba(237,227,211,0.09);
+    --bg:#332536;
+    --paper:#3f2e2b;
+    --paper-raised:#4a3730;
+    --cream:#faf1e2;
+    --cream-dim:#e0d2bd;
+    --amber:#eba75f;
+    --amber-dim:#d18e4f;
+    --plum:#a2718f;
+    --sage:#a3b596;
+    --border:rgba(250,241,226,0.11);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
@@ -43,7 +43,7 @@
     inset:0;
     pointer-events:none;
     z-index:0;
-    background:radial-gradient(ellipse 60% 45% at 50% 28%, rgba(212,149,79,0.14), rgba(212,149,79,0.05) 40%, rgba(33,24,35,0) 70%);
+    background:radial-gradient(ellipse 60% 45% at 50% 28%, rgba(235,167,95,0.16), rgba(235,167,95,0.06) 40%, rgba(51,37,54,0) 70%);
     animation:flicker 7s ease-in-out infinite;
   }
   @keyframes flicker{
@@ -91,6 +91,16 @@
     background:linear-gradient(var(--bg) 70%, transparent);
   }
   .wordmark{font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:500; font-size:1.4rem; color:var(--amber);}
+  .flourish{font-size:0.85rem; opacity:0.75; margin-left:6px;}
+
+  .page-card{
+    background:var(--paper); border-radius:16px; padding:22px 20px 16px;
+    box-shadow:0 6px 24px rgba(20,12,20,0.28); margin-bottom:6px;
+  }
+  .divider{
+    text-align:center; color:var(--amber-dim); opacity:0.55; font-size:0.75rem;
+    margin:26px 0; letter-spacing:0.3em;
+  }
   nav{display:flex; gap:4px; background:var(--paper); border-radius:10px; padding:3px;}
   nav button{
     background:transparent; border:none; color:var(--cream-dim); padding:8px 14px;
@@ -118,7 +128,7 @@
     font-family:'Lora',serif; font-size:1.08rem; line-height:1.85; resize:vertical;
     padding:0 0 20px; border-bottom:1px solid var(--border);
   }
-  textarea::placeholder{color:rgba(237,227,211,0.28); font-style:italic;}
+  textarea::placeholder{color:rgba(250,241,226,0.28); font-style:italic;}
   textarea:focus{outline:none;}
 
   .tag-row{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0;}
@@ -131,7 +141,7 @@
     transition:background 0.12s, border-color 0.12s, transform 0.08s;
   }
   .tag-btn:active{transform:scale(0.94);}
-  .tag-btn.selected{background:rgba(122,138,111,0.18); border-color:var(--sage); color:var(--cream);}
+  .tag-btn.selected{background:rgba(163,181,150,0.18); border-color:var(--sage); color:var(--cream);}
 
   /* freeform private tags */
   .private-tags{margin:18px 0;}
@@ -147,7 +157,7 @@
   }
   .chip-list{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
   .chip{
-    display:inline-flex; align-items:center; gap:6px; background:rgba(107,74,94,0.25);
+    display:inline-flex; align-items:center; gap:6px; background:rgba(162,113,143,0.25);
     border:1px solid var(--plum); color:var(--cream); padding:5px 6px 5px 12px;
     border-radius:14px; font-size:0.8rem; font-family:'Lora',serif;
   }
@@ -160,9 +170,20 @@
     background:var(--paper); border:1px solid var(--border); color:var(--cream-dim);
     padding:5px 12px; border-radius:14px; font-size:0.78rem; cursor:pointer; font-family:'Lora',serif;
   }
-  .filter-pill.active{background:rgba(212,149,79,0.18); border-color:var(--amber-dim); color:var(--amber);}
+  .filter-pill.active{background:rgba(235,167,95,0.18); border-color:var(--amber-dim); color:var(--amber);}
   .archive-tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;}
-  .archive-tag-pill{font-size:0.72rem; font-family:'DM Mono',monospace; color:var(--sage); background:rgba(122,138,111,0.12); padding:2px 8px; border-radius:10px;}
+  .archive-tag-pill{font-size:0.72rem; font-family:'DM Mono',monospace; color:var(--sage); background:rgba(163,181,150,0.12); padding:2px 8px; border-radius:10px;}
+  .tag-manager{background:var(--paper); border-radius:12px; padding:14px; margin-bottom:16px; display:flex; flex-direction:column; gap:8px;}
+  .tag-manager-row{display:flex; gap:6px; align-items:center;}
+  .tag-manager-row input{
+    flex:1; background:var(--paper-raised); border:1px solid var(--border); color:var(--cream);
+    padding:7px 10px; border-radius:14px; font-family:'Lora',serif; font-size:0.82rem;
+  }
+  .tag-manager-btn{
+    background:var(--paper-raised); border:1px solid var(--border); color:var(--sage);
+    padding:7px 12px; border-radius:14px; font-size:0.75rem; cursor:pointer; font-family:'DM Mono',monospace;
+  }
+  .tag-manager-delete{color:#c98787;}
 
   /* wrapped view */
   .wrapped-hero{text-align:center; padding:26px 0 10px;}
@@ -184,7 +205,7 @@
   .mood-bar-count{font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--cream-dim); width:24px; text-align:right;}
   .year-picker{display:flex; gap:6px; justify-content:center; margin-bottom:6px;}
   .year-pill{background:var(--paper); border:1px solid var(--border); color:var(--cream-dim); padding:5px 12px; border-radius:12px; font-family:'DM Mono',monospace; font-size:0.75rem; cursor:pointer;}
-  .year-pill.active{background:rgba(212,149,79,0.18); border-color:var(--amber-dim); color:var(--amber);}
+  .year-pill.active{background:rgba(235,167,95,0.18); border-color:var(--amber-dim); color:var(--amber);}
 
   .save-row{display:flex; align-items:center; justify-content:space-between; margin-top:18px; gap:12px;}
   .save-status{font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--cream-dim);}
@@ -251,6 +272,9 @@ let selectedMoods = new Set();
 let selectedWeather = null;
 let selectedTags = new Set();
 let archiveTagFilter = null;
+let originalContentAtLoad = "";
+let timestampMarkerAdded = false;
+let tagManagerOpen = false;
 let saveTimer = null;
 
 const todayStr = () => {
@@ -494,7 +518,7 @@ let authMode = "signin"; // or "signup"
 function renderAuth(){
   document.getElementById("app").innerHTML = `
     <div class="auth-screen">
-      <div class="auth-title">The Quiet Hours</div>
+      <div class="auth-title">🌙 The Quiet Hours</div>
       <div class="auth-sub">${authMode === "signin" ? "Welcome back. Sign in to pick up where you left off." : "Create your account — just you, just for this."}</div>
       <div class="auth-form">
         <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email">
@@ -528,42 +552,49 @@ function renderToday(){
   selectedMoods = new Set(existing && existing.mood ? existing.mood.split(", ") : []);
   selectedWeather = existing ? existing.weather : null;
   selectedTags = new Set(existing && existing.tags ? existing.tags : []);
+  originalContentAtLoad = existing ? existing.content : "";
+  timestampMarkerAdded = false;
   const oth = onThisDayEntries();
 
   return `
-    <div class="date-line">${fmtDate(date)}</div>
-    <div class="streak">🕯️ <span id="streakVal">${computeStreak()}</span> day streak</div>
-    <div class="prompt-chip" id="promptChip">${PROMPTS[dayOfYear() % PROMPTS.length]}</div>
-    <textarea id="entryText" placeholder="Write whatever's on your mind...">${existing ? existing.content : ""}</textarea>
-
-    <div class="tag-row">
-      <div class="tag-group">
-        <div class="tag-label">Mood</div>
-        <div class="tag-options" id="moodOptions">
-          ${MOODS.map(m => `<button class="tag-btn ${selectedMoods.has(m)?'selected':''}" data-mood="${m}">${m}</button>`).join("")}
-        </div>
-      </div>
-      <div class="tag-group">
-        <div class="tag-label">Weather</div>
-        <div class="tag-options" id="weatherOptions">
-          ${WEATHERS.map(w => `<button class="tag-btn ${selectedWeather===w?'selected':''}" data-weather="${w}">${w}</button>`).join("")}
-        </div>
+    <div class="page-card">
+      <div class="date-line">${fmtDate(date)}</div>
+      <div class="streak">🕯️ <span id="streakVal">${computeStreak()}</span> day streak</div>
+      <div class="prompt-chip" id="promptChip">${PROMPTS[dayOfYear() % PROMPTS.length]}</div>
+      <textarea id="entryText" placeholder="Write whatever's on your mind...">${existing ? existing.content : ""}</textarea>
+      <div class="save-row">
+        <div class="save-status" id="saveStatus">${existing ? "saved" : ""}</div>
       </div>
     </div>
 
-    <div class="private-tags">
-      <div class="tag-label">Private tags · just for you, only you can search by these</div>
-      <div class="tag-input-row">
-        <input type="text" id="tagInput" placeholder="e.g. vent, big day, dream..." maxlength="24">
-        <button id="addTagBtn">Add</button>
-      </div>
-      <div class="chip-list" id="chipList">
-        ${Array.from(selectedTags).map(t => `<span class="chip">${t}<button data-tag="${t}">×</button></span>`).join("")}
-      </div>
-    </div>
+    <div class="divider">❀ ❀ ❀</div>
 
-    <div class="save-row">
-      <div class="save-status" id="saveStatus">${existing ? "saved" : ""}</div>
+    <div class="page-card">
+      <div class="tag-row">
+        <div class="tag-group">
+          <div class="tag-label">Mood</div>
+          <div class="tag-options" id="moodOptions">
+            ${MOODS.map(m => `<button class="tag-btn ${selectedMoods.has(m)?'selected':''}" data-mood="${m}">${m}</button>`).join("")}
+          </div>
+        </div>
+        <div class="tag-group">
+          <div class="tag-label">Weather</div>
+          <div class="tag-options" id="weatherOptions">
+            ${WEATHERS.map(w => `<button class="tag-btn ${selectedWeather===w?'selected':''}" data-weather="${w}">${w}</button>`).join("")}
+          </div>
+        </div>
+      </div>
+
+      <div class="private-tags">
+        <div class="tag-label">Private tags · just for you, only you can search by these</div>
+        <div class="tag-input-row">
+          <input type="text" id="tagInput" placeholder="e.g. vent, big day, dream..." maxlength="24">
+          <button id="addTagBtn">Add</button>
+        </div>
+        <div class="chip-list" id="chipList">
+          ${Array.from(selectedTags).map(t => `<span class="chip">${t}<button data-tag="${t}">×</button></span>`).join("")}
+        </div>
+      </div>
     </div>
 
     ${oth.length ? `
@@ -594,7 +625,19 @@ function renderArchive(){
       <div class="filter-bar" id="filterBar">
         ${allTags.map(t => `<span class="filter-pill ${archiveTagFilter===t?'active':''}" data-tag="${t}">${t}</span>`).join("")}
         ${archiveTagFilter ? `<span class="filter-pill" id="clearFilter">clear ×</span>` : ""}
+        <span class="filter-pill" id="manageTagsBtn">${tagManagerOpen ? "done" : "edit tags ✎"}</span>
       </div>
+      ${tagManagerOpen ? `
+        <div class="tag-manager">
+          ${allTags.map(t => `
+            <div class="tag-manager-row">
+              <input type="text" class="tag-rename-input" data-old="${t}" value="${t}" maxlength="24">
+              <button class="tag-manager-btn" data-action="save" data-old="${t}">save</button>
+              <button class="tag-manager-btn tag-manager-delete" data-action="delete" data-old="${t}">delete</button>
+            </div>
+          `).join("")}
+        </div>
+      ` : ""}
     ` : ""}
     <div class="archive-list">
       ${written.map(e => `
@@ -622,7 +665,7 @@ function render(){
   const app = document.getElementById("app");
   app.innerHTML = `
     <header>
-      <div class="wordmark">The Quiet Hours</div>
+      <div class="wordmark">The Quiet Hours <span class="flourish">✨</span></div>
       <nav>
         <button id="navToday" class="${currentView==='today'?'active':''}">Today</button>
         <button id="navArchive" class="${currentView==='archive'?'active':''}">Archive</button>
@@ -640,6 +683,16 @@ function render(){
 
   if (currentView === "today"){
     document.getElementById("entryText").addEventListener("input", scheduleSave);
+    document.getElementById("entryText").addEventListener("focus", () => {
+      const ta = document.getElementById("entryText");
+      if (!timestampMarkerAdded && originalContentAtLoad.trim().length > 0 && ta.value === originalContentAtLoad){
+        const time = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+        ta.value = ta.value.replace(/\s+$/,'') + "\n\n— " + time + " —\n\n";
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+        timestampMarkerAdded = true;
+        scheduleSave();
+      }
+    });
     document.getElementById("promptChip").addEventListener("click", insertPrompt);
     document.querySelectorAll("#moodOptions .tag-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -697,11 +750,53 @@ function render(){
     });
     const clearBtn = document.getElementById("clearFilter");
     if (clearBtn) clearBtn.addEventListener("click", (e) => { e.stopPropagation(); archiveTagFilter = null; render(); });
+    const manageBtn = document.getElementById("manageTagsBtn");
+    if (manageBtn) manageBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      tagManagerOpen = !tagManagerOpen;
+      render();
+    });
+    document.querySelectorAll(".tag-manager-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const old = btn.dataset.old;
+        if (btn.dataset.action === "delete"){
+          deleteTagGlobally(old);
+        } else {
+          const input = document.querySelector(`.tag-rename-input[data-old="${old}"]`);
+          renameTagGlobally(old, input.value);
+        }
+      });
+    });
   } else if (currentView === "wrapped") {
     document.querySelectorAll(".year-pill").forEach(pill => {
       pill.addEventListener("click", () => { wrappedYear = pill.dataset.year; render(); });
     });
   }
+}
+
+async function renameTagGlobally(oldTag, newTagRaw){
+  const newTag = newTagRaw.trim().toLowerCase();
+  if (!newTag || newTag === oldTag) return;
+  const affected = entries.filter(e => (e.tags||[]).includes(oldTag));
+  for (const e of affected){
+    const newTags = Array.from(new Set(e.tags.map(t => t === oldTag ? newTag : t)));
+    const { error } = await sb.from("entries").update({ tags: newTags }).eq("id", e.id);
+    if (!error) e.tags = newTags;
+  }
+  if (archiveTagFilter === oldTag) archiveTagFilter = newTag;
+  render();
+}
+
+async function deleteTagGlobally(tag){
+  const affected = entries.filter(e => (e.tags||[]).includes(tag));
+  for (const e of affected){
+    const newTags = e.tags.filter(t => t !== tag);
+    const { error } = await sb.from("entries").update({ tags: newTags }).eq("id", e.id);
+    if (!error) e.tags = newTags;
+  }
+  if (archiveTagFilter === tag) archiveTagFilter = null;
+  render();
 }
 
 function renderChipList(){
@@ -724,7 +819,7 @@ function openEntry(date){
   const app = document.getElementById("app");
   app.innerHTML = `
     <header>
-      <div class="wordmark">The Quiet Hours</div>
+      <div class="wordmark">The Quiet Hours <span class="flourish">✨</span></div>
       <nav><button id="backBtn">← Back to Archive</button></nav>
     </header>
     <main>
