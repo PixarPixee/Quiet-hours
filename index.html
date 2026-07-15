@@ -117,17 +117,18 @@
   .sprite-critter::after{right:25%;}
   nav{display:flex; gap:4px; background:var(--paper); border-radius:10px; padding:3px;}
   nav button{
-    background:transparent; border:none; color:var(--cream-dim); padding:8px 14px;
-    border-radius:8px; font-family:'Lora',serif; font-size:0.85rem; cursor:pointer;
+    background:transparent; border:none; color:var(--cream-dim); padding:9px 12px;
+    border-radius:8px; font-family:'Press Start 2P', monospace; font-size:0.55rem; cursor:pointer;
   }
   nav button.active{background:var(--paper-raised); color:var(--amber);}
 
   /* ---- today page ---- */
-  .date-line{font-family:'DM Mono',monospace; font-size:0.78rem; letter-spacing:0.06em; color:var(--cream-dim); text-transform:uppercase; margin-bottom:6px;}
+  .date-line{font-family:'Press Start 2P', monospace; font-size:0.6rem; letter-spacing:0.04em; color:var(--cream-dim); text-transform:uppercase; margin-bottom:10px; line-height:1.6;}
   .streak{
-    display:inline-flex; align-items:center; gap:6px; font-family:'DM Mono',monospace;
-    font-size:0.78rem; color:var(--amber); margin-bottom:22px;
+    display:inline-flex; align-items:center; gap:6px; font-family:'Press Start 2P', monospace;
+    font-size:0.55rem; color:var(--amber); margin-bottom:22px; line-height:1.8;
   }
+  .streak .pixel{font-size:0.65rem;}
 
   .prompt-chip{
     display:inline-block; background:var(--paper); border:1px solid var(--border);
@@ -147,7 +148,7 @@
 
   .tag-row{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0;}
   .tag-group{display:flex; flex-direction:column; gap:6px;}
-  .tag-label{font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--cream-dim); text-transform:uppercase; letter-spacing:0.05em;}
+  .tag-label{font-family:'Press Start 2P', monospace; font-size:0.52rem; color:var(--cream-dim); text-transform:uppercase; letter-spacing:0.02em; line-height:1.6;}
   .edit-link{color:var(--amber-dim); cursor:pointer; text-transform:none; letter-spacing:0; margin-left:6px;}
   .tag-options{display:flex; gap:6px; flex-wrap:wrap;}
   .tag-btn{
@@ -183,11 +184,11 @@
   .filter-bar{display:flex; flex-wrap:wrap; gap:6px; margin:14px 0 4px;}
   .filter-pill{
     background:var(--paper); border:1px solid var(--border); color:var(--cream-dim);
-    padding:5px 12px; border-radius:14px; font-size:0.78rem; cursor:pointer; font-family:'Lora',serif;
+    padding:6px 11px; border-radius:8px; font-size:0.55rem; cursor:pointer; font-family:'Press Start 2P', monospace;
   }
   .filter-pill.active{background:rgba(217,143,163,0.18); border-color:var(--amber-dim); color:var(--amber);}
   .archive-tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;}
-  .archive-tag-pill{font-size:0.72rem; font-family:'DM Mono',monospace; color:var(--sage); background:rgba(143,174,130,0.12); padding:2px 8px; border-radius:10px;}
+  .archive-tag-pill{font-size:0.55rem; font-family:'Press Start 2P', monospace; color:var(--sage); background:rgba(143,174,130,0.12); padding:3px 8px; border-radius:6px;}
   .tag-manager{background:var(--paper); border-radius:12px; padding:14px; margin-bottom:16px; display:flex; flex-direction:column; gap:8px;}
   .tag-manager-row{display:flex; gap:6px; align-items:center;}
   .tag-manager-row input{
@@ -196,35 +197,35 @@
   }
   .tag-manager-btn{
     background:var(--paper-raised); border:1px solid var(--border); color:var(--sage);
-    padding:7px 12px; border-radius:14px; font-size:0.75rem; cursor:pointer; font-family:'DM Mono',monospace;
+    padding:7px 10px; border-radius:8px; font-size:0.52rem; cursor:pointer; font-family:'Press Start 2P', monospace;
   }
   .tag-manager-delete{color:#e09b98;}
 
   /* wrapped view */
   .wrapped-hero{text-align:center; padding:26px 0 10px;}
-  .wrapped-year{font-family:'DM Mono',monospace; font-size:0.78rem; color:var(--amber-dim); letter-spacing:0.08em; text-transform:uppercase;}
+  .wrapped-year{font-family:'Press Start 2P', monospace; font-size:0.6rem; color:var(--amber-dim); letter-spacing:0.06em; text-transform:uppercase; line-height:1.8;}
   .wrapped-title{font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:500; font-size:2.1rem; color:var(--cream); margin-top:4px;}
   .wrapped-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:26px 0;}
-  .wrapped-stat{background:var(--paper); border-radius:12px; padding:18px 16px;}
+  .wrapped-stat{background:var(--paper); border-radius:12px; padding:18px 16px; border:2px solid var(--paper-raised);}
   .wrapped-stat-num{font-family:'Cormorant Garamond',serif; font-size:2.1rem; color:var(--amber); line-height:1;}
   .wrapped-stat-num.pixel{font-size:1.3rem; line-height:1.4;}
-  .wrapped-stat-label{font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--cream-dim); text-transform:uppercase; letter-spacing:0.04em; margin-top:6px;}
+  .wrapped-stat-label{font-family:'Press Start 2P', monospace; font-size:0.5rem; color:var(--cream-dim); text-transform:uppercase; letter-spacing:0.02em; margin-top:8px; line-height:1.6;}
   .wrapped-section{margin:30px 0;}
   .wrapped-section-title{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.2rem; color:var(--amber-dim); margin-bottom:14px;}
   .month-bars{display:flex; align-items:flex-end; gap:5px; height:90px;}
   .month-bar-wrap{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
   .month-bar{width:100%; background:linear-gradient(var(--amber), var(--plum)); border-radius:3px 3px 0 0; min-height:2px;}
-  .month-label{font-family:'DM Mono',monospace; font-size:0.6rem; color:var(--cream-dim); margin-top:6px;}
+  .month-label{font-family:'Press Start 2P', monospace; font-size:0.5rem; color:var(--cream-dim); margin-top:8px;}
   .mood-bar-row{display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:0.85rem;}
   .mood-bar-track{flex:1; height:8px; background:var(--paper); border-radius:4px; overflow:hidden;}
   .mood-bar-fill{height:100%; background:var(--sage);}
-  .mood-bar-count{font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--cream-dim); width:24px; text-align:right;}
+  .mood-bar-count{font-family:'Press Start 2P', monospace; font-size:0.55rem; color:var(--cream-dim); width:28px; text-align:right;}
   .year-picker{display:flex; gap:6px; justify-content:center; margin-bottom:6px;}
-  .year-pill{background:var(--paper); border:1px solid var(--border); color:var(--cream-dim); padding:5px 12px; border-radius:12px; font-family:'DM Mono',monospace; font-size:0.75rem; cursor:pointer;}
+  .year-pill{background:var(--paper); border:1px solid var(--border); color:var(--cream-dim); padding:6px 11px; border-radius:8px; font-family:'Press Start 2P', monospace; font-size:0.55rem; cursor:pointer;}
   .year-pill.active{background:rgba(217,143,163,0.18); border-color:var(--amber-dim); color:var(--amber);}
 
   .save-row{display:flex; align-items:center; justify-content:space-between; margin-top:18px; gap:12px;}
-  .save-status{font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--cream-dim);}
+  .save-status{font-family:'Press Start 2P', monospace; font-size:0.52rem; color:var(--cream-dim); line-height:1.6;}
 
   .on-this-day{
     margin-top:38px; padding-top:22px; border-top:1px solid var(--border);
@@ -278,8 +279,8 @@ const PROMPTS = [
   "What would make tomorrow feel lighter?"
 ];
 
-const DEFAULT_MOODS = ["🌙 calm","✨ hopeful","🌧️ heavy","🔥 lit up","🍂 nostalgic","💛 content","😶 numb","🌪️ overwhelmed"];
-const WEATHERS = ["☀️ sunny","⛅ cloudy","🌧️ rainy","❄️ snowy","🌫️ foggy","🌩️ stormy"];
+const DEFAULT_MOODS = ["🌙 calm","🌻 joyful","🍄 dreamy","🐓 restless","🧺 cozy","⛏️ determined","🐛 anxious","🌾 grounded"];
+const WEATHERS = ["☀️ sunny","🌦️ showery","⛈️ stormy","❄️ snowy","🌫️ misty","🍃 breezy"];
 let userMoods = [...DEFAULT_MOODS];
 let settingsLoaded = false;
 let moodManagerOpen = false;
@@ -347,6 +348,12 @@ function renameMood(index, newVal){
 
 function deleteMood(index){
   userMoods.splice(index, 1);
+  saveUserMoods();
+  render();
+}
+
+function resetMoods(){
+  userMoods = [...DEFAULT_MOODS];
   saveUserMoods();
   render();
 }
@@ -646,6 +653,7 @@ function renderToday(){
                 <input type="text" id="newMoodInput" placeholder="add a mood, e.g. 🌾 restless" maxlength="24">
                 <button id="addMoodBtn">Add</button>
               </div>
+              <button class="tag-manager-btn" id="resetMoodsBtn" style="align-self:flex-start;">reset to suggested ✦</button>
             </div>
           ` : ""}
         </div>
@@ -794,6 +802,8 @@ function render(){
       const input = document.getElementById("newMoodInput");
       addMood(input.value);
     });
+    const resetMoodsBtn = document.getElementById("resetMoodsBtn");
+    if (resetMoodsBtn) resetMoodsBtn.addEventListener("click", resetMoods);
     document.querySelectorAll("#weatherOptions .tag-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         const w = btn.dataset.weather;
