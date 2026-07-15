@@ -155,7 +155,7 @@
   .prompt-chip:hover{border-color:var(--amber-dim);}
 
   textarea{
-    width:100%; min-height:44vh; background:transparent; border:none; color:var(--cream);
+    width:100%; min-height:44vh; background:transparent; border:none; color:#d6c8de;
     font-family:'Lora',serif; font-size:1.08rem; line-height:1.85; resize:vertical;
     padding:0 0 20px; border-bottom:1px solid var(--border);
   }
@@ -239,6 +239,20 @@
   .year-picker{display:flex; gap:6px; justify-content:center; margin-bottom:6px;}
   .year-pill{background:var(--paper); border:1px solid var(--border); color:var(--cream-dim); padding:6px 11px; border-radius:8px; font-family:'Press Start 2P', monospace; font-size:0.55rem; cursor:pointer;}
   .year-pill.active{background:rgba(217,143,163,0.18); border-color:var(--amber-dim); color:var(--amber);}
+
+  .heatmap-wrap{overflow-x:auto; padding-bottom:4px;}
+  .heatmap-months{display:grid; grid-auto-flow:column; grid-auto-columns:13px; margin-bottom:4px;}
+  .heatmap-month-label{font-family:'Press Start 2P', monospace; font-size:0.42rem; color:var(--cream-dim); white-space:nowrap;}
+  .heatmap{display:grid; grid-template-rows:repeat(7, 11px); grid-auto-flow:column; grid-auto-columns:11px; gap:2px;}
+  .heatmap-cell{width:11px; height:11px; border-radius:2px; background:rgba(255,255,255,0.04);}
+  .heatmap-cell.level-out{background:transparent;}
+  .heatmap-cell.level-0{background:rgba(255,255,255,0.06);}
+  .heatmap-cell.level-1{background:rgba(143,174,130,0.35);}
+  .heatmap-cell.level-2{background:rgba(143,174,130,0.6);}
+  .heatmap-cell.level-3{background:rgba(143,174,130,0.85);}
+  .heatmap-cell.level-4{background:var(--sage);}
+  .heatmap-legend{display:flex; align-items:center; gap:4px; margin-top:10px; font-family:'Press Start 2P', monospace; font-size:0.42rem; color:var(--cream-dim);}
+  .heatmap-legend .heatmap-cell{width:9px; height:9px; margin:0 1px;}
 
   .save-row{display:flex; align-items:center; justify-content:space-between; margin-top:18px; gap:12px;}
   .save-status{font-family:'Press Start 2P', monospace; font-size:0.52rem; color:var(--cream-dim); line-height:1.6;}
@@ -502,6 +516,35 @@ function insertPrompt(){
 
 let wrappedYear = null;
 
+const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function heatLevel(words){
+  if (!words) return 0;
+  if (words < 50) return 1;
+  if (words < 150) return 2;
+  if (words < 300) return 3;
+  return 4;
+}
+
+function buildHeatmapWeeks(year, wordsByDate){
+  const start = new Date(year, 0, 1);
+  const end = new Date(year, 11, 31);
+  const gridStart = new Date(start);
+  gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+  const weeks = [];
+  let cur = new Date(gridStart);
+  while (cur <= end){
+    const week = [];
+    for (let d = 0; d < 7; d++){
+      const ds = cur.getFullYear()+"-"+String(cur.getMonth()+1).padStart(2,"0")+"-"+String(cur.getDate()).padStart(2,"0");
+      week.push({ date: ds, inYear: cur.getFullYear() === year, words: wordsByDate[ds] || 0, isFirstOfMonth: cur.getDate() === 1 });
+      cur.setDate(cur.getDate()+1);
+    }
+    weeks.push(week);
+  }
+  return weeks;
+}
+
 function computeLongestStreak(dates){
   const sorted = Array.from(dates).sort();
   let longest = 0, current = 0, prevDate = null;
@@ -551,12 +594,42 @@ function renderWrapped(){
   const maxMonthCount = Math.max(...monthCounts, 1);
   const monthLabels = ["J","F","M","A","M","J","J","A","S","O","N","D"];
 
+  const wordsByDate = {};
+  yearEntries.forEach(e => { wordsByDate[e.entry_date] = e.content.trim().split(/\s+/).filter(Boolean).length; });
+  const heatWeeks = buildHeatmapWeeks(parseInt(wrappedYear,10), wordsByDate);
+
   return `
     <div class="wrapped-hero">
       <div class="wrapped-year">Your year in</div>
       <div class="wrapped-title">The Quiet Hours</div>
     </div>
     ${years.length > 1 ? `<div class="year-picker">${years.map(y => `<span class="year-pill ${y===wrappedYear?'active':''}" data-year="${y}">${y}</span>`).join("")}</div>` : ""}
+
+    <div class="wrapped-section">
+      <div class="wrapped-section-title">🌱 Your growing season</div>
+      <div class="heatmap-wrap">
+        <div class="heatmap-months">
+          ${heatWeeks.map(week => {
+            const first = week.find(d => d.isFirstOfMonth && d.inYear);
+            return `<div class="heatmap-month-label">${first ? MONTH_ABBR[parseInt(first.date.slice(5,7),10)-1] : ""}</div>`;
+          }).join("")}
+        </div>
+        <div class="heatmap">
+          ${heatWeeks.map(week => week.map(day =>
+            `<div class="heatmap-cell level-${day.inYear ? heatLevel(day.words) : 'out'}" title="${day.inYear ? day.date + ' · ' + day.words + ' words' : ''}"></div>`
+          ).join("")).join("")}
+        </div>
+      </div>
+      <div class="heatmap-legend">
+        <span>soil</span>
+        <span class="heatmap-cell level-0"></span>
+        <span class="heatmap-cell level-1"></span>
+        <span class="heatmap-cell level-2"></span>
+        <span class="heatmap-cell level-3"></span>
+        <span class="heatmap-cell level-4"></span>
+        <span>full bloom 🌾</span>
+      </div>
+    </div>
 
     <div class="wrapped-grid">
       <div class="wrapped-stat"><div class="wrapped-stat-num pixel">${yearEntries.length}</div><div class="wrapped-stat-label">entries written</div></div>
