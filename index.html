@@ -128,7 +128,9 @@
   .tag-btn{
     background:var(--paper); border:1px solid var(--border); color:var(--cream-dim);
     padding:6px 11px; border-radius:16px; font-size:0.85rem; cursor:pointer; font-family:'Lora',serif;
+    transition:background 0.12s, border-color 0.12s, transform 0.08s;
   }
+  .tag-btn:active{transform:scale(0.94);}
   .tag-btn.selected{background:rgba(122,138,111,0.18); border-color:var(--sage); color:var(--cream);}
 
   .save-row{display:flex; align-items:center; justify-content:space-between; margin-top:18px; gap:12px;}
@@ -192,7 +194,7 @@ const WEATHERS = ["☀️ sunny","⛅ cloudy","🌧️ rainy","❄️ snowy","�
 let session = null;
 let currentView = "today";
 let entries = [];
-let selectedMood = null;
+let selectedMoods = new Set();
 let selectedWeather = null;
 let saveTimer = null;
 
@@ -229,9 +231,14 @@ async function sendMagicLink(email){
   msgEl.textContent = "Sending...";
   const { error } = await sb.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: window.location.href }
+    options: { emailRedirectTo: window.location.origin + window.location.pathname }
   });
-  msgEl.textContent = error ? "Something went wrong — try again." : "Check your email for the link.";
+  if (error){
+    console.error("Magic link error:", error);
+    msgEl.textContent = error.message || "Something went wrong — try again.";
+  } else {
+    msgEl.textContent = "Check your email for the link.";
+  }
 }
 
 async function loadEntries(){
@@ -267,37 +274,42 @@ function onThisDayEntries(){
 }
 
 async function saveEntry(){
-  const content = document.getElementById("entryText").value;
   const status = document.getElementById("saveStatus");
-  status.textContent = "saving...";
+  const textEl = document.getElementById("entryText");
+  const content = textEl ? textEl.value : (entries.find(e => e.entry_date === todayStr())?.content || "");
+  if (status) status.textContent = "saving...";
   const date = todayStr();
   const existing = entries.find(e => e.entry_date === date);
+  const moodStr = selectedMoods.size ? Array.from(selectedMoods).join(", ") : null;
   const payload = {
     user_id: session.user.id,
     entry_date: date,
     content,
-    mood: selectedMood,
+    mood: moodStr,
     weather: selectedWeather
   };
-  let error;
+  let error, data;
   if (existing){
     ({ error } = await sb.from("entries").update(payload).eq("id", existing.id));
+    if (!error) Object.assign(existing, payload);
   } else {
-    ({ error } = await sb.from("entries").insert(payload));
+    ({ data, error } = await sb.from("entries").insert(payload).select().single());
+    if (!error && data) entries.unshift(data);
   }
-  if (!error){
-    await loadEntries();
-    status.textContent = "saved · " + new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    renderStreak();
-  } else {
-    status.textContent = "couldn't save — try again";
+  const liveStatus = document.getElementById("saveStatus");
+  if (liveStatus){
+    liveStatus.textContent = error
+      ? "couldn't save — try again"
+      : "saved · " + new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
   }
+  renderStreak();
 }
 
 function scheduleSave(){
   clearTimeout(saveTimer);
-  document.getElementById("saveStatus").textContent = "typing...";
-  saveTimer = setTimeout(saveEntry, 1200);
+  const status = document.getElementById("saveStatus");
+  if (status) status.textContent = "typing...";
+  saveTimer = setTimeout(saveEntry, 900);
 }
 
 function renderStreak(){
@@ -342,7 +354,7 @@ function renderAuth(){
 function renderToday(){
   const date = todayStr();
   const existing = entries.find(e => e.entry_date === date);
-  selectedMood = existing ? existing.mood : null;
+  selectedMoods = new Set(existing && existing.mood ? existing.mood.split(", ") : []);
   selectedWeather = existing ? existing.weather : null;
   const oth = onThisDayEntries();
 
@@ -356,7 +368,7 @@ function renderToday(){
       <div class="tag-group">
         <div class="tag-label">Mood</div>
         <div class="tag-options" id="moodOptions">
-          ${MOODS.map(m => `<button class="tag-btn ${selectedMood===m?'selected':''}" data-mood="${m}">${m}</button>`).join("")}
+          ${MOODS.map(m => `<button class="tag-btn ${selectedMoods.has(m)?'selected':''}" data-mood="${m}">${m}</button>`).join("")}
         </div>
       </div>
       <div class="tag-group">
@@ -435,16 +447,20 @@ function render(){
     document.getElementById("promptChip").addEventListener("click", insertPrompt);
     document.querySelectorAll("#moodOptions .tag-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        selectedMood = selectedMood === btn.dataset.mood ? null : btn.dataset.mood;
-        saveEntry();
-        render();
+        const m = btn.dataset.mood;
+        if (selectedMoods.has(m)){ selectedMoods.delete(m); btn.classList.remove("selected"); }
+        else { selectedMoods.add(m); btn.classList.add("selected"); }
+        scheduleSave();
       });
     });
     document.querySelectorAll("#weatherOptions .tag-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        selectedWeather = selectedWeather === btn.dataset.weather ? null : btn.dataset.weather;
-        saveEntry();
-        render();
+        const w = btn.dataset.weather;
+        const wasSelected = selectedWeather === w;
+        document.querySelectorAll("#weatherOptions .tag-btn").forEach(b => b.classList.remove("selected"));
+        selectedWeather = wasSelected ? null : w;
+        if (selectedWeather) btn.classList.add("selected");
+        scheduleSave();
       });
     });
   } else {
