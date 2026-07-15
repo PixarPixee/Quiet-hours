@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Quiet Hours">
 <meta name="theme-color" content="#241b2e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&family=Press+Start+2P&family=Silkscreen:wght@400;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -65,7 +65,7 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; gap:18px; padding:20px;
   }
-  .auth-title{font-family:'Cormorant Garamond',serif; font-weight:500; font-style:italic; font-size:2.6rem; color:var(--cream); letter-spacing:0.01em;}
+  .auth-title{font-family:'Silkscreen', monospace; font-weight:700; font-size:1.6rem; color:var(--cream); letter-spacing:0.01em; line-height:1.6;}
   .auth-sub{color:var(--cream-dim); font-size:0.95rem; max-width:320px; line-height:1.6;}
   .auth-form{display:flex; flex-direction:column; gap:12px; width:100%; max-width:320px; margin-top:8px;}
   input[type=email], input[type=password]{
@@ -91,24 +91,40 @@
     padding:22px 0 14px; position:sticky; top:0; z-index:5;
     background:linear-gradient(var(--bg) 70%, transparent);
   }
-  .wordmark{font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:500; font-size:1.4rem; color:var(--amber);}
+  .wordmark{font-family:'Silkscreen', monospace; font-weight:700; font-size:0.95rem; color:var(--amber); line-height:1.5; letter-spacing:0.01em;}
   .flourish{font-size:0.85rem; opacity:0.75; margin-left:6px;}
 
   .page-card{
-    background:var(--paper); border-radius:10px; padding:22px 20px 16px;
+    background:
+      radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px) 0 0/16px 16px,
+      var(--paper);
+    border-radius:10px; padding:26px 22px 16px; position:relative;
     box-shadow:0 6px 22px rgba(10,6,14,0.35); margin-bottom:6px;
     border:3px solid var(--paper-raised);
   }
+  .page-card::before{
+    content:'🍄'; position:absolute; top:-11px; left:-8px; font-size:1.3rem;
+    transform:rotate(-14deg); filter:drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+  }
+  .page-card::after{
+    content:'⭐'; position:absolute; top:-11px; right:-6px; font-size:1.05rem;
+    transform:rotate(16deg); filter:drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+  }
+  .entry-divider{border-top:2px dashed var(--border); margin:14px 0 16px;}
   .divider{
-    text-align:center; color:var(--amber-dim); opacity:0.7; font-size:0.6rem;
-    margin:26px 0; letter-spacing:0.3em;
+    text-align:center; color:var(--amber-dim); opacity:0.85; font-size:0.6rem;
+    margin:26px 0; letter-spacing:0.3em; animation:twinkle 2.6s ease-in-out infinite;
   }
+  @keyframes twinkle{ 0%,100%{opacity:0.55;} 50%{opacity:1;} }
   .sprite-critter{
-    display:inline-block; width:18px; height:18px; border-radius:50% 50% 45% 45%;
+    display:inline-block; width:28px; height:28px; border-radius:50% 50% 45% 45%;
     background:radial-gradient(circle at 35% 30%, #b3d1a3, var(--sage));
-    position:relative; vertical-align:middle; margin-right:5px;
+    position:relative; vertical-align:middle; margin-right:6px;
     box-shadow:inset 0 -3px 4px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.25);
+    animation:spriteBob 2.6s ease-in-out infinite;
   }
+  @keyframes spriteBob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-3px);} }
+  @media (prefers-reduced-motion: reduce){ .sprite-critter, .divider{animation:none;} }
   .sprite-critter::before, .sprite-critter::after{
     content:''; position:absolute; width:15%; height:20%; background:#fff;
     border-radius:50%; top:40%;
@@ -132,8 +148,8 @@
 
   .prompt-chip{
     display:inline-block; background:var(--paper); border:1px solid var(--border);
-    color:var(--cream-dim); font-size:0.85rem; padding:9px 14px; border-radius:20px;
-    cursor:pointer; margin-bottom:18px; font-style:italic; font-family:'Cormorant Garamond',serif;
+    color:var(--cream-dim); font-size:1.15rem; padding:8px 16px; border-radius:20px;
+    cursor:pointer; margin-bottom:18px; font-family:'Caveat', cursive; font-weight:600;
     transition:border-color 0.15s;
   }
   .prompt-chip:hover{border-color:var(--amber-dim);}
@@ -204,7 +220,7 @@
   /* wrapped view */
   .wrapped-hero{text-align:center; padding:26px 0 10px;}
   .wrapped-year{font-family:'Press Start 2P', monospace; font-size:0.6rem; color:var(--amber-dim); letter-spacing:0.06em; text-transform:uppercase; line-height:1.8;}
-  .wrapped-title{font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:500; font-size:2.1rem; color:var(--cream); margin-top:4px;}
+  .wrapped-title{font-family:'Silkscreen', monospace; font-weight:700; font-size:1.4rem; color:var(--cream); margin-top:8px; line-height:1.6;}
   .wrapped-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:26px 0;}
   .wrapped-stat{background:var(--paper); border-radius:12px; padding:18px 16px; border:2px solid var(--paper-raised);}
   .wrapped-stat-num{font-family:'Cormorant Garamond',serif; font-size:2.1rem; color:var(--amber); line-height:1;}
@@ -581,7 +597,7 @@ let authMode = "signin"; // or "signup"
 function renderAuth(){
   document.getElementById("app").innerHTML = `
     <div class="auth-screen">
-      <span class="sprite-critter" style="width:34px;height:34px;"></span>
+      <span class="sprite-critter" style="width:44px;height:44px;"></span>
       <div class="auth-title">The Quiet Hours</div>
       <div class="auth-sub">${authMode === "signin" ? "Welcome back. Sign in to pick up where you left off." : "Create your account — just you, just for this."}</div>
       <div class="auth-form">
@@ -625,6 +641,7 @@ function renderToday(){
       <div class="date-line">${fmtDate(date)}</div>
       <div class="streak"><span class="sprite-critter"></span> <span id="streakVal" class="pixel">${computeStreak()}</span> day streak</div>
       <div class="prompt-chip" id="promptChip">${PROMPTS[dayOfYear() % PROMPTS.length]}</div>
+      <div class="entry-divider"></div>
       <textarea id="entryText" placeholder="Write whatever's on your mind...">${existing ? existing.content : ""}</textarea>
       <div class="save-row">
         <div class="save-status" id="saveStatus">${existing ? "saved" : ""}</div>
