@@ -67,11 +67,11 @@
   .auth-title{font-family:'Cormorant Garamond',serif; font-weight:500; font-style:italic; font-size:2.6rem; color:var(--cream); letter-spacing:0.01em;}
   .auth-sub{color:var(--cream-dim); font-size:0.95rem; max-width:320px; line-height:1.6;}
   .auth-form{display:flex; flex-direction:column; gap:12px; width:100%; max-width:320px; margin-top:8px;}
-  input[type=email]{
+  input[type=email], input[type=password]{
     background:var(--paper); border:1px solid var(--border); color:var(--cream);
     padding:14px 16px; border-radius:10px; font-family:'Lora',serif; font-size:1rem;
   }
-  input[type=email]:focus{outline:2px solid var(--amber-dim); outline-offset:2px;}
+  input[type=email]:focus, input[type=password]:focus{outline:2px solid var(--amber-dim); outline-offset:2px;}
   .btn{
     background:var(--amber); color:#211823; border:none; padding:14px 20px;
     border-radius:10px; font-family:'Lora',serif; font-weight:500; font-size:0.95rem;
@@ -281,18 +281,29 @@ async function init(){
   render();
 }
 
-async function sendMagicLink(email){
+async function signIn(email, password){
   const msgEl = document.getElementById("authMsg");
-  msgEl.textContent = "Sending...";
-  const { error } = await sb.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: window.location.origin + window.location.pathname }
-  });
+  msgEl.textContent = "Signing in...";
+  const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error){
-    console.error("Magic link error:", error);
+    console.error("Sign in error:", error);
     msgEl.textContent = error.message || "Something went wrong — try again.";
+  }
+}
+
+async function signUp(email, password){
+  const msgEl = document.getElementById("authMsg");
+  msgEl.textContent = "Creating account...";
+  const { data, error } = await sb.auth.signUp({ email, password });
+  if (error){
+    console.error("Sign up error:", error);
+    msgEl.textContent = error.message || "Something went wrong — try again.";
+    return;
+  }
+  if (data.session){
+    msgEl.textContent = "Account created!";
   } else {
-    msgEl.textContent = "Check your email for the link.";
+    msgEl.textContent = "Account created — check your email to confirm, then sign in.";
   }
 }
 
@@ -478,24 +489,36 @@ function renderWrapped(){
   `;
 }
 
+let authMode = "signin"; // or "signup"
+
 function renderAuth(){
   document.getElementById("app").innerHTML = `
     <div class="auth-screen">
       <div class="auth-title">The Quiet Hours</div>
-      <div class="auth-sub">A private place to set down your day. Enter your email and we'll send a link to sign in — no password to remember.</div>
+      <div class="auth-sub">${authMode === "signin" ? "Welcome back. Sign in to pick up where you left off." : "Create your account — just you, just for this."}</div>
       <div class="auth-form">
         <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email">
-        <button class="btn" id="sendLinkBtn">Send magic link</button>
+        <input type="password" id="passwordInput" placeholder="password" autocomplete="${authMode === 'signin' ? 'current-password' : 'new-password'}">
+        <button class="btn" id="authSubmitBtn">${authMode === "signin" ? "Sign in" : "Create account"}</button>
+        <button class="btn btn-ghost" id="authToggleBtn">${authMode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}</button>
         <div class="auth-msg" id="authMsg"></div>
       </div>
     </div>
   `;
-  document.getElementById("sendLinkBtn").addEventListener("click", () => {
+  const submit = () => {
     const email = document.getElementById("emailInput").value.trim();
-    if (email) sendMagicLink(email);
+    const password = document.getElementById("passwordInput").value;
+    if (!email || !password) return;
+    if (authMode === "signin") signIn(email, password);
+    else signUp(email, password);
+  };
+  document.getElementById("authSubmitBtn").addEventListener("click", submit);
+  document.getElementById("passwordInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submit();
   });
-  document.getElementById("emailInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") document.getElementById("sendLinkBtn").click();
+  document.getElementById("authToggleBtn").addEventListener("click", () => {
+    authMode = authMode === "signin" ? "signup" : "signin";
+    render();
   });
 }
 
