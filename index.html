@@ -133,6 +133,59 @@
   .tag-btn:active{transform:scale(0.94);}
   .tag-btn.selected{background:rgba(122,138,111,0.18); border-color:var(--sage); color:var(--cream);}
 
+  /* freeform private tags */
+  .private-tags{margin:18px 0;}
+  .tag-input-row{display:flex; gap:8px; margin-top:6px;}
+  .tag-input-row input{
+    flex:1; background:var(--paper); border:1px solid var(--border); color:var(--cream);
+    padding:8px 12px; border-radius:16px; font-family:'Lora',serif; font-size:0.85rem;
+  }
+  .tag-input-row input:focus{outline:1px solid var(--amber-dim);}
+  .tag-input-row button{
+    background:var(--paper-raised); border:1px solid var(--border); color:var(--amber);
+    padding:8px 14px; border-radius:16px; font-size:0.85rem; cursor:pointer; font-family:'Lora',serif;
+  }
+  .chip-list{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; background:rgba(107,74,94,0.25);
+    border:1px solid var(--plum); color:var(--cream); padding:5px 6px 5px 12px;
+    border-radius:14px; font-size:0.8rem; font-family:'Lora',serif;
+  }
+  .chip button{background:none; border:none; color:var(--cream-dim); cursor:pointer; font-size:0.95rem; padding:0 6px; line-height:1;}
+  .chip button:hover{color:var(--cream);}
+
+  /* archive filter + tags */
+  .filter-bar{display:flex; flex-wrap:wrap; gap:6px; margin:14px 0 4px;}
+  .filter-pill{
+    background:var(--paper); border:1px solid var(--border); color:var(--cream-dim);
+    padding:5px 12px; border-radius:14px; font-size:0.78rem; cursor:pointer; font-family:'Lora',serif;
+  }
+  .filter-pill.active{background:rgba(212,149,79,0.18); border-color:var(--amber-dim); color:var(--amber);}
+  .archive-tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;}
+  .archive-tag-pill{font-size:0.72rem; font-family:'DM Mono',monospace; color:var(--sage); background:rgba(122,138,111,0.12); padding:2px 8px; border-radius:10px;}
+
+  /* wrapped view */
+  .wrapped-hero{text-align:center; padding:26px 0 10px;}
+  .wrapped-year{font-family:'DM Mono',monospace; font-size:0.78rem; color:var(--amber-dim); letter-spacing:0.08em; text-transform:uppercase;}
+  .wrapped-title{font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:500; font-size:2.1rem; color:var(--cream); margin-top:4px;}
+  .wrapped-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:26px 0;}
+  .wrapped-stat{background:var(--paper); border-radius:12px; padding:18px 16px;}
+  .wrapped-stat-num{font-family:'Cormorant Garamond',serif; font-size:2.1rem; color:var(--amber); line-height:1;}
+  .wrapped-stat-label{font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--cream-dim); text-transform:uppercase; letter-spacing:0.04em; margin-top:6px;}
+  .wrapped-section{margin:30px 0;}
+  .wrapped-section-title{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.2rem; color:var(--amber-dim); margin-bottom:14px;}
+  .month-bars{display:flex; align-items:flex-end; gap:5px; height:90px;}
+  .month-bar-wrap{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+  .month-bar{width:100%; background:linear-gradient(var(--amber), var(--plum)); border-radius:3px 3px 0 0; min-height:2px;}
+  .month-label{font-family:'DM Mono',monospace; font-size:0.6rem; color:var(--cream-dim); margin-top:6px;}
+  .mood-bar-row{display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:0.85rem;}
+  .mood-bar-track{flex:1; height:8px; background:var(--paper); border-radius:4px; overflow:hidden;}
+  .mood-bar-fill{height:100%; background:var(--sage);}
+  .mood-bar-count{font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--cream-dim); width:24px; text-align:right;}
+  .year-picker{display:flex; gap:6px; justify-content:center; margin-bottom:6px;}
+  .year-pill{background:var(--paper); border:1px solid var(--border); color:var(--cream-dim); padding:5px 12px; border-radius:12px; font-family:'DM Mono',monospace; font-size:0.75rem; cursor:pointer;}
+  .year-pill.active{background:rgba(212,149,79,0.18); border-color:var(--amber-dim); color:var(--amber);}
+
   .save-row{display:flex; align-items:center; justify-content:space-between; margin-top:18px; gap:12px;}
   .save-status{font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--cream-dim);}
 
@@ -196,6 +249,8 @@ let currentView = "today";
 let entries = [];
 let selectedMoods = new Set();
 let selectedWeather = null;
+let selectedTags = new Set();
+let archiveTagFilter = null;
 let saveTimer = null;
 
 const todayStr = () => {
@@ -286,7 +341,8 @@ async function saveEntry(){
     entry_date: date,
     content,
     mood: moodStr,
-    weather: selectedWeather
+    weather: selectedWeather,
+    tags: Array.from(selectedTags)
   };
   let error, data;
   if (existing){
@@ -330,6 +386,98 @@ function insertPrompt(){
   scheduleSave();
 }
 
+let wrappedYear = null;
+
+function computeLongestStreak(dates){
+  const sorted = Array.from(dates).sort();
+  let longest = 0, current = 0, prevDate = null;
+  for (const ds of sorted){
+    const d = new Date(ds);
+    if (prevDate){
+      const diffDays = Math.round((d - prevDate) / 86400000);
+      current = diffDays === 1 ? current + 1 : 1;
+    } else {
+      current = 1;
+    }
+    longest = Math.max(longest, current);
+    prevDate = d;
+  }
+  return longest;
+}
+
+function renderWrapped(){
+  const written = entries.filter(e => e.content && e.content.trim());
+  if (!written.length){
+    return `<div class="empty-state">Write a few entries and your year will start taking shape here.</div>`;
+  }
+  const years = Array.from(new Set(written.map(e => e.entry_date.slice(0,4)))).sort().reverse();
+  if (!wrappedYear || !years.includes(wrappedYear)) wrappedYear = years[0];
+
+  const yearEntries = written.filter(e => e.entry_date.startsWith(wrappedYear));
+  if (!yearEntries.length){
+    return `
+      <div class="year-picker">${years.map(y => `<span class="year-pill ${y===wrappedYear?'active':''}" data-year="${y}">${y}</span>`).join("")}</div>
+      <div class="empty-state">No entries yet for ${wrappedYear}.</div>
+    `;
+  }
+
+  const totalWords = yearEntries.reduce((sum,e) => sum + e.content.trim().split(/\s+/).filter(Boolean).length, 0);
+  const dates = new Set(yearEntries.map(e => e.entry_date));
+  const longestStreak = computeLongestStreak(dates);
+
+  const moodCounts = {};
+  yearEntries.forEach(e => {
+    if (e.mood) e.mood.split(", ").forEach(m => { moodCounts[m] = (moodCounts[m]||0)+1; });
+  });
+  const topMoods = Object.entries(moodCounts).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const maxMoodCount = topMoods.length ? topMoods[0][1] : 1;
+
+  const monthCounts = Array(12).fill(0);
+  yearEntries.forEach(e => { monthCounts[parseInt(e.entry_date.slice(5,7),10)-1]++; });
+  const maxMonthCount = Math.max(...monthCounts, 1);
+  const monthLabels = ["J","F","M","A","M","J","J","A","S","O","N","D"];
+
+  return `
+    <div class="wrapped-hero">
+      <div class="wrapped-year">Your year in</div>
+      <div class="wrapped-title">The Quiet Hours</div>
+    </div>
+    ${years.length > 1 ? `<div class="year-picker">${years.map(y => `<span class="year-pill ${y===wrappedYear?'active':''}" data-year="${y}">${y}</span>`).join("")}</div>` : ""}
+
+    <div class="wrapped-grid">
+      <div class="wrapped-stat"><div class="wrapped-stat-num">${yearEntries.length}</div><div class="wrapped-stat-label">entries written</div></div>
+      <div class="wrapped-stat"><div class="wrapped-stat-num">${totalWords.toLocaleString()}</div><div class="wrapped-stat-label">words</div></div>
+      <div class="wrapped-stat"><div class="wrapped-stat-num">${longestStreak}</div><div class="wrapped-stat-label">longest streak</div></div>
+      <div class="wrapped-stat"><div class="wrapped-stat-num">${topMoods[0] ? topMoods[0][0] : "—"}</div><div class="wrapped-stat-label">most felt mood</div></div>
+    </div>
+
+    <div class="wrapped-section">
+      <div class="wrapped-section-title">Entries by month</div>
+      <div class="month-bars">
+        ${monthCounts.map((c,i) => `
+          <div class="month-bar-wrap">
+            <div class="month-bar" style="height:${Math.max((c/maxMonthCount)*100, c>0?6:0)}%"></div>
+            <div class="month-label">${monthLabels[i]}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    ${topMoods.length ? `
+      <div class="wrapped-section">
+        <div class="wrapped-section-title">Moods of the year</div>
+        ${topMoods.map(([m,c]) => `
+          <div class="mood-bar-row">
+            <span>${m}</span>
+            <div class="mood-bar-track"><div class="mood-bar-fill" style="width:${(c/maxMoodCount)*100}%"></div></div>
+            <span class="mood-bar-count">${c}</span>
+          </div>
+        `).join("")}
+      </div>
+    ` : ""}
+  `;
+}
+
 function renderAuth(){
   document.getElementById("app").innerHTML = `
     <div class="auth-screen">
@@ -356,6 +504,7 @@ function renderToday(){
   const existing = entries.find(e => e.entry_date === date);
   selectedMoods = new Set(existing && existing.mood ? existing.mood.split(", ") : []);
   selectedWeather = existing ? existing.weather : null;
+  selectedTags = new Set(existing && existing.tags ? existing.tags : []);
   const oth = onThisDayEntries();
 
   return `
@@ -379,6 +528,17 @@ function renderToday(){
       </div>
     </div>
 
+    <div class="private-tags">
+      <div class="tag-label">Private tags · just for you, only you can search by these</div>
+      <div class="tag-input-row">
+        <input type="text" id="tagInput" placeholder="e.g. vent, big day, dream..." maxlength="24">
+        <button id="addTagBtn">Add</button>
+      </div>
+      <div class="chip-list" id="chipList">
+        ${Array.from(selectedTags).map(t => `<span class="chip">${t}<button data-tag="${t}">×</button></span>`).join("")}
+      </div>
+    </div>
+
     <div class="save-row">
       <div class="save-status" id="saveStatus">${existing ? "saved" : ""}</div>
     </div>
@@ -398,11 +558,21 @@ function renderToday(){
 }
 
 function renderArchive(){
-  const written = entries.filter(e => e.content && e.content.trim()).sort((a,b) => b.entry_date.localeCompare(a.entry_date));
+  let written = entries.filter(e => e.content && e.content.trim()).sort((a,b) => b.entry_date.localeCompare(a.entry_date));
   if (!written.length){
     return `<div class="empty-state">Nothing written yet. Today is a good day to start.</div>`;
   }
+  const allTags = Array.from(new Set(written.flatMap(e => e.tags || []))).sort();
+  if (archiveTagFilter){
+    written = written.filter(e => (e.tags || []).includes(archiveTagFilter));
+  }
   return `
+    ${allTags.length ? `
+      <div class="filter-bar" id="filterBar">
+        ${allTags.map(t => `<span class="filter-pill ${archiveTagFilter===t?'active':''}" data-tag="${t}">${t}</span>`).join("")}
+        ${archiveTagFilter ? `<span class="filter-pill" id="clearFilter">clear ×</span>` : ""}
+      </div>
+    ` : ""}
     <div class="archive-list">
       ${written.map(e => `
         <div class="archive-item" data-date="${e.entry_date}">
@@ -411,6 +581,7 @@ function renderArchive(){
             <span>${e.mood || ""} ${e.weather || ""}</span>
           </div>
           <div class="archive-preview">${e.content}</div>
+          ${(e.tags && e.tags.length) ? `<div class="archive-tags">${e.tags.map(t => `<span class="archive-tag-pill">${t}</span>`).join("")}</div>` : ""}
         </div>
       `).join("")}
     </div>
@@ -432,15 +603,17 @@ function render(){
       <nav>
         <button id="navToday" class="${currentView==='today'?'active':''}">Today</button>
         <button id="navArchive" class="${currentView==='archive'?'active':''}">Archive</button>
+        <button id="navWrapped" class="${currentView==='wrapped'?'active':''}">Wrapped</button>
       </nav>
     </header>
     <main id="mainContent">
-      ${currentView === 'today' ? renderToday() : renderArchive()}
+      ${currentView === 'today' ? renderToday() : currentView === 'archive' ? renderArchive() : renderWrapped()}
     </main>
   `;
 
   document.getElementById("navToday").addEventListener("click", () => { currentView="today"; render(); });
   document.getElementById("navArchive").addEventListener("click", () => { currentView="archive"; render(); });
+  document.getElementById("navWrapped").addEventListener("click", () => { currentView="wrapped"; render(); });
 
   if (currentView === "today"){
     document.getElementById("entryText").addEventListener("input", scheduleSave);
@@ -463,16 +636,62 @@ function render(){
         scheduleSave();
       });
     });
-  } else {
+
+    const addTag = () => {
+      const input = document.getElementById("tagInput");
+      const val = input.value.trim().toLowerCase();
+      if (!val) return;
+      selectedTags.add(val);
+      input.value = "";
+      renderChipList();
+      scheduleSave();
+    };
+    document.getElementById("addTagBtn").addEventListener("click", addTag);
+    document.getElementById("tagInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter"){ e.preventDefault(); addTag(); }
+    });
+    document.querySelectorAll("#chipList .chip button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedTags.delete(btn.dataset.tag);
+        renderChipList();
+        scheduleSave();
+      });
+    });
+  } else if (currentView === "archive") {
     document.querySelectorAll(".archive-item").forEach(item => {
       item.addEventListener("click", () => {
         currentView = "today";
         const date = item.dataset.date;
-        // jump today view to show that entry by temporarily overriding todayStr behavior
         openEntry(date);
       });
     });
+    document.querySelectorAll(".filter-pill[data-tag]").forEach(pill => {
+      pill.addEventListener("click", (e) => {
+        e.stopPropagation();
+        archiveTagFilter = archiveTagFilter === pill.dataset.tag ? null : pill.dataset.tag;
+        render();
+      });
+    });
+    const clearBtn = document.getElementById("clearFilter");
+    if (clearBtn) clearBtn.addEventListener("click", (e) => { e.stopPropagation(); archiveTagFilter = null; render(); });
+  } else if (currentView === "wrapped") {
+    document.querySelectorAll(".year-pill").forEach(pill => {
+      pill.addEventListener("click", () => { wrappedYear = pill.dataset.year; render(); });
+    });
   }
+}
+
+function renderChipList(){
+  const list = document.getElementById("chipList");
+  if (!list) return;
+  list.innerHTML = Array.from(selectedTags).map(t => `<span class="chip">${t}<button data-tag="${t}">×</button></span>`).join("");
+  list.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      selectedTags.delete(btn.dataset.tag);
+      renderChipList();
+      scheduleSave();
+    });
+  });
 }
 
 let viewingDate = null;
