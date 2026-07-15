@@ -131,6 +131,20 @@
   }
   .sprite-critter::before{left:25%;}
   .sprite-critter::after{right:25%;}
+  .sprite-wrap{position:relative; display:inline-block; vertical-align:middle;}
+  .sprite-accessory{
+    position:absolute; top:-9px; left:50%; transform:translateX(-50%) rotate(-8deg);
+    font-size:0.8rem; pointer-events:none; line-height:1;
+  }
+  .sprite-sparkle{
+    position:absolute; top:-4px; right:-7px; font-size:0.55rem;
+    pointer-events:none; animation:twinkle 2s ease-in-out infinite;
+  }
+  .sprite-aura .sprite-critter{
+    box-shadow:inset 0 -3px 4px rgba(0,0,0,0.18), 0 0 14px 4px rgba(217,143,163,0.4);
+  }
+  .sprite-caption{font-family:'Press Start 2P', monospace; font-size:0.48rem; color:var(--cream-dim); margin-top:4px; line-height:1.7;}
+  .sprite-caption .edit-link{margin-left:6px;}
   nav{display:flex; gap:4px; background:var(--paper); border-radius:10px; padding:3px;}
   nav button{
     background:transparent; border:none; color:var(--cream-dim); padding:9px 12px;
@@ -313,6 +327,8 @@ const DEFAULT_MOODS = ["🌙 calm","🌻 joyful","🍄 dreamy","🐓 restless","
 const WEATHERS = ["☀️ sunny","🌦️ showery","⛈️ stormy","❄️ snowy","🌫️ misty","🍃 breezy"];
 let userMoods = [...DEFAULT_MOODS];
 let settingsLoaded = false;
+let spriteName = "Sprite";
+let spriteRenameOpen = false;
 let moodManagerOpen = false;
 
 let session = null;
@@ -346,18 +362,27 @@ function dayOfYear(){
 }
 
 async function loadSettings(){
-  const { data } = await sb.from("user_settings").select("moods").eq("user_id", session.user.id).maybeSingle();
+  const { data } = await sb.from("user_settings").select("moods, sprite_name").eq("user_id", session.user.id).maybeSingle();
   if (data && data.moods && data.moods.length){
     userMoods = data.moods;
   } else {
     userMoods = [...DEFAULT_MOODS];
     await sb.from("user_settings").upsert({ user_id: session.user.id, moods: userMoods });
   }
+  spriteName = (data && data.sprite_name) ? data.sprite_name : "Sprite";
   settingsLoaded = true;
 }
 
 async function saveUserMoods(){
   await sb.from("user_settings").upsert({ user_id: session.user.id, moods: userMoods });
+}
+
+async function saveSpriteName(name){
+  const val = name.trim();
+  if (!val) return;
+  spriteName = val;
+  await sb.from("user_settings").upsert({ user_id: session.user.id, sprite_name: spriteName });
+  render();
 }
 
 function addMood(text){
@@ -517,6 +542,42 @@ function insertPrompt(){
 let wrappedYear = null;
 
 const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+const SPRITE_STAGES = [
+  { min: 0,   name: "Seedling", size: 26 },
+  { min: 7,   name: "Sprout",   size: 30 },
+  { min: 30,  name: "Budding",  size: 34 },
+  { min: 100, name: "Blooming", size: 38 },
+  { min: 300, name: "Full Bloom", size: 44 }
+];
+
+function getSpriteStage(totalEntries){
+  let idx = 0;
+  for (let i = 0; i < SPRITE_STAGES.length; i++){
+    if (totalEntries >= SPRITE_STAGES[i].min) idx = i;
+  }
+  return { ...SPRITE_STAGES[idx], idx, next: SPRITE_STAGES[idx+1] || null };
+}
+
+function spriteCaption(stage, totalEntries){
+  if (!stage.next) return `${spriteName} has reached Full Bloom 🌾`;
+  const remaining = stage.next.min - totalEntries;
+  return `${spriteName} the ${stage.name} · ${remaining} ${remaining===1?"entry":"entries"} to ${stage.next.name}`;
+}
+
+function renderSpriteHTML(sizePx, stageIdx){
+  let accessory = "";
+  let sparkle = "";
+  let auraClass = "";
+  if (stageIdx >= 1) accessory = `<span class="sprite-accessory">🌿</span>`;
+  if (stageIdx >= 2) accessory = `<span class="sprite-accessory">🌸</span>`;
+  if (stageIdx >= 3) sparkle = `<span class="sprite-sparkle">✨</span>`;
+  if (stageIdx >= 4) auraClass = " sprite-aura";
+  return `<span class="sprite-wrap${auraClass}">
+    <span class="sprite-critter" style="width:${sizePx}px;height:${sizePx}px;"></span>
+    ${accessory}${sparkle}
+  </span>`;
+}
 
 function heatLevel(words){
   if (!words) return 0;
@@ -708,11 +769,20 @@ function renderToday(){
   originalContentAtLoad = existing ? existing.content : "";
   timestampMarkerAdded = false;
   const oth = onThisDayEntries();
+  const totalEntries = entries.filter(e => e.content && e.content.trim()).length;
+  const spriteStage = getSpriteStage(totalEntries);
 
   return `
     <div class="page-card">
       <div class="date-line">${fmtDate(date)}</div>
-      <div class="streak"><span class="sprite-critter"></span> <span id="streakVal" class="pixel">${computeStreak()}</span> day streak</div>
+      <div class="streak">${renderSpriteHTML(spriteStage.size, spriteStage.idx)} <span id="streakVal" class="pixel">${computeStreak()}</span> day streak</div>
+      <div class="sprite-caption">${spriteCaption(spriteStage, totalEntries)} <span class="edit-link" id="renameSpriteBtn">${spriteRenameOpen ? "done" : "rename ✎"}</span></div>
+      ${spriteRenameOpen ? `
+        <div class="tag-input-row" style="margin-bottom:14px;">
+          <input type="text" id="spriteNameInput" value="${spriteName}" maxlength="18">
+          <button id="saveSpriteNameBtn">Save</button>
+        </div>
+      ` : ""}
       <div class="prompt-chip" id="promptChip">${PROMPTS[dayOfYear() % PROMPTS.length]}</div>
       <div class="entry-divider"></div>
       <textarea id="entryText" placeholder="Write whatever's on your mind...">${existing ? existing.content : ""}</textarea>
@@ -867,6 +937,14 @@ function render(){
       }
     });
     document.getElementById("promptChip").addEventListener("click", insertPrompt);
+    const renameSpriteBtn = document.getElementById("renameSpriteBtn");
+    if (renameSpriteBtn) renameSpriteBtn.addEventListener("click", () => { spriteRenameOpen = !spriteRenameOpen; render(); });
+    const saveSpriteNameBtn = document.getElementById("saveSpriteNameBtn");
+    if (saveSpriteNameBtn) saveSpriteNameBtn.addEventListener("click", () => {
+      const input = document.getElementById("spriteNameInput");
+      spriteRenameOpen = false;
+      saveSpriteName(input.value);
+    });
     document.querySelectorAll("#moodOptions .tag-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         const m = btn.dataset.mood;
