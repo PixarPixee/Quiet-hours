@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<title>The Quiet Hours</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Quiet Hours">
+<meta name="theme-color" content="#211823">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#211823;
+    --paper:#2b2019;
+    --paper-raised:#332619;
+    --cream:#ede3d3;
+    --cream-dim:#c9beac;
+    --amber:#d4954f;
+    --amber-dim:#a97a44;
+    --plum:#6b4a5e;
+    --sage:#7a8a6f;
+    --border:rgba(237,227,211,0.09);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--cream);
+    font-family:'Lora',serif;
+    min-height:100vh;
+    min-height:100dvh;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* lamplight signature */
+  .lamplight{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    background:radial-gradient(ellipse 60% 45% at 50% 28%, rgba(212,149,79,0.14), rgba(212,149,79,0.05) 40%, rgba(33,24,35,0) 70%);
+    animation:flicker 7s ease-in-out infinite;
+  }
+  @keyframes flicker{
+    0%,100%{opacity:1;}
+    45%{opacity:0.85;}
+    50%{opacity:1;}
+    72%{opacity:0.92;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .lamplight{animation:none;}
+  }
+
+  #app{position:relative; z-index:1; max-width:640px; margin:0 auto; padding:env(safe-area-inset-top,0) 20px calc(env(safe-area-inset-bottom,0) + 20px);}
+
+  /* ---- auth screen ---- */
+  .auth-screen{
+    min-height:100vh; min-height:100dvh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; gap:18px; padding:20px;
+  }
+  .auth-title{font-family:'Cormorant Garamond',serif; font-weight:500; font-style:italic; font-size:2.6rem; color:var(--cream); letter-spacing:0.01em;}
+  .auth-sub{color:var(--cream-dim); font-size:0.95rem; max-width:320px; line-height:1.6;}
+  .auth-form{display:flex; flex-direction:column; gap:12px; width:100%; max-width:320px; margin-top:8px;}
+  input[type=email]{
+    background:var(--paper); border:1px solid var(--border); color:var(--cream);
+    padding:14px 16px; border-radius:10px; font-family:'Lora',serif; font-size:1rem;
+  }
+  input[type=email]:focus{outline:2px solid var(--amber-dim); outline-offset:2px;}
+  .btn{
+    background:var(--amber); color:#211823; border:none; padding:14px 20px;
+    border-radius:10px; font-family:'Lora',serif; font-weight:500; font-size:0.95rem;
+    cursor:pointer; transition:opacity 0.15s;
+  }
+  .btn:hover{opacity:0.9;}
+  .btn:focus-visible{outline:2px solid var(--cream); outline-offset:2px;}
+  .btn-ghost{
+    background:transparent; border:1px solid var(--border); color:var(--cream-dim);
+  }
+  .auth-msg{color:var(--sage); font-size:0.85rem; min-height:1.2em;}
+
+  /* ---- header/nav ---- */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 0 14px; position:sticky; top:0; z-index:5;
+    background:linear-gradient(var(--bg) 70%, transparent);
+  }
+  .wordmark{font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:500; font-size:1.4rem; color:var(--amber);}
+  nav{display:flex; gap:4px; background:var(--paper); border-radius:10px; padding:3px;}
+  nav button{
+    background:transparent; border:none; color:var(--cream-dim); padding:8px 14px;
+    border-radius:8px; font-family:'Lora',serif; font-size:0.85rem; cursor:pointer;
+  }
+  nav button.active{background:var(--paper-raised); color:var(--amber);}
+
+  /* ---- today page ---- */
+  .date-line{font-family:'DM Mono',monospace; font-size:0.78rem; letter-spacing:0.06em; color:var(--cream-dim); text-transform:uppercase; margin-bottom:6px;}
+  .streak{
+    display:inline-flex; align-items:center; gap:6px; font-family:'DM Mono',monospace;
+    font-size:0.78rem; color:var(--amber); margin-bottom:22px;
+  }
+
+  .prompt-chip{
+    display:inline-block; background:var(--paper); border:1px solid var(--border);
+    color:var(--cream-dim); font-size:0.85rem; padding:9px 14px; border-radius:20px;
+    cursor:pointer; margin-bottom:18px; font-style:italic; font-family:'Cormorant Garamond',serif;
+    transition:border-color 0.15s;
+  }
+  .prompt-chip:hover{border-color:var(--amber-dim);}
+
+  textarea{
+    width:100%; min-height:44vh; background:transparent; border:none; color:var(--cream);
+    font-family:'Lora',serif; font-size:1.08rem; line-height:1.85; resize:vertical;
+    padding:0 0 20px; border-bottom:1px solid var(--border);
+  }
+  textarea::placeholder{color:rgba(237,227,211,0.28); font-style:italic;}
+  textarea:focus{outline:none;}
+
+  .tag-row{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0;}
+  .tag-group{display:flex; flex-direction:column; gap:6px;}
+  .tag-label{font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--cream-dim); text-transform:uppercase; letter-spacing:0.05em;}
+  .tag-options{display:flex; gap:6px; flex-wrap:wrap;}
+  .tag-btn{
+    background:var(--paper); border:1px solid var(--border); color:var(--cream-dim);
+    padding:6px 11px; border-radius:16px; font-size:0.85rem; cursor:pointer; font-family:'Lora',serif;
+  }
+  .tag-btn.selected{background:rgba(122,138,111,0.18); border-color:var(--sage); color:var(--cream);}
+
+  .save-row{display:flex; align-items:center; justify-content:space-between; margin-top:18px; gap:12px;}
+  .save-status{font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--cream-dim);}
+
+  .on-this-day{
+    margin-top:38px; padding-top:22px; border-top:1px solid var(--border);
+  }
+  .oth-title{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.15rem; color:var(--amber-dim); margin-bottom:10px;}
+  .oth-card{
+    background:var(--paper); border-radius:10px; padding:14px 16px; margin-bottom:10px;
+    font-size:0.9rem; color:var(--cream-dim); line-height:1.6;
+  }
+  .oth-year{font-family:'DM Mono',monospace; font-size:0.7rem; color:var(--amber-dim); display:block; margin-bottom:4px;}
+
+  /* ---- archive ---- */
+  .archive-list{display:flex; flex-direction:column; gap:10px; margin-top:18px;}
+  .archive-item{
+    background:var(--paper); border-radius:10px; padding:14px 16px; cursor:pointer;
+    border:1px solid transparent; transition:border-color 0.15s;
+  }
+  .archive-item:hover{border-color:var(--border);}
+  .archive-date{font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--amber-dim); display:flex; justify-content:space-between;}
+  .archive-preview{font-size:0.9rem; color:var(--cream-dim); margin-top:6px; line-height:1.5; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  .empty-state{color:var(--cream-dim); font-size:0.9rem; text-align:center; padding:60px 20px; font-style:italic; font-family:'Cormorant Garamond',serif; font-size:1.2rem;}
+
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--paper-raised); border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="lamplight"></div>
+<div id="app"></div>
+
+<script>
+const SUPABASE_URL = "https://oeoxmalwkauaiikhqazs.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lb3htYWx3a2F1YWlpa2hxYXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMTM1MTIsImV4cCI6MjA5OTY4OTUxMn0.EgVcBXdvMBlPemYp-XDa0Oj5jNDgFCmKa60CdeDCidk";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const PROMPTS = [
+  "What's sitting heaviest on your mind right now?",
+  "What made you smile today, even briefly?",
+  "What are you avoiding thinking about?",
+  "What would you tell yourself this morning?",
+  "What's one thing you're grateful for tonight?",
+  "What surprised you today?",
+  "What do you wish someone had asked you today?",
+  "What's a small win from today?",
+  "What conversation is still echoing in your head?",
+  "What are you looking forward to?",
+  "What did you learn about yourself this week?",
+  "What's something you needed but didn't get today?",
+  "Where did you feel most like yourself today?",
+  "What's a worry you can set down for tonight?",
+  "What would make tomorrow feel lighter?"
+];
+
+const MOODS = ["🌙 calm","✨ hopeful","🌧️ heavy","🔥 lit up","🍂 nostalgic","💛 content","😶 numb","🌪️ overwhelmed"];
+const WEATHERS = ["☀️ sunny","⛅ cloudy","🌧️ rainy","❄️ snowy","🌫️ foggy","🌩️ stormy"];
+
+let session = null;
+let currentView = "today";
+let entries = [];
+let selectedMood = null;
+let selectedWeather = null;
+let saveTimer = null;
+
+const todayStr = () => {
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+};
+
+const fmtDate = (dateStr) => {
+  const [y,m,d] = dateStr.split("-").map(Number);
+  const dt = new Date(y, m-1, d);
+  return dt.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+};
+
+function dayOfYear(){
+  const now = new Date();
+  const start = new Date(now.getFullYear(),0,0);
+  const diff = now - start;
+  return Math.floor(diff / 86400000);
+}
+
+async function init(){
+  const { data } = await sb.auth.getSession();
+  session = data.session;
+  sb.auth.onAuthStateChange((_event, sess) => {
+    session = sess;
+    render();
+  });
+  render();
+}
+
+async function sendMagicLink(email){
+  const msgEl = document.getElementById("authMsg");
+  msgEl.textContent = "Sending...";
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.href }
+  });
+  msgEl.textContent = error ? "Something went wrong — try again." : "Check your email for the link.";
+}
+
+async function loadEntries(){
+  const { data, error } = await sb
+    .from("entries")
+    .select("*")
+    .order("entry_date", { ascending: false });
+  if (!error) entries = data || [];
+}
+
+function computeStreak(){
+  const dates = new Set(entries.filter(e => e.content && e.content.trim()).map(e => e.entry_date));
+  let streak = 0;
+  let cursor = new Date();
+  // if today not written yet, start counting from yesterday
+  if (!dates.has(todayStr())) cursor.setDate(cursor.getDate()-1);
+  while (true){
+    const ds = cursor.getFullYear()+"-"+String(cursor.getMonth()+1).padStart(2,"0")+"-"+String(cursor.getDate()).padStart(2,"0");
+    if (dates.has(ds)){ streak++; cursor.setDate(cursor.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+
+function onThisDayEntries(){
+  const now = new Date();
+  const mm = String(now.getMonth()+1).padStart(2,"0");
+  const dd = String(now.getDate()).padStart(2,"0");
+  return entries.filter(e => {
+    const [,m,d] = e.entry_date.split("-");
+    return m === mm && d === dd && e.entry_date !== todayStr() && e.content && e.content.trim();
+  });
+}
+
+async function saveEntry(){
+  const content = document.getElementById("entryText").value;
+  const status = document.getElementById("saveStatus");
+  status.textContent = "saving...";
+  const date = todayStr();
+  const existing = entries.find(e => e.entry_date === date);
+  const payload = {
+    user_id: session.user.id,
+    entry_date: date,
+    content,
+    mood: selectedMood,
+    weather: selectedWeather
+  };
+  let error;
+  if (existing){
+    ({ error } = await sb.from("entries").update(payload).eq("id", existing.id));
+  } else {
+    ({ error } = await sb.from("entries").insert(payload));
+  }
+  if (!error){
+    await loadEntries();
+    status.textContent = "saved · " + new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    renderStreak();
+  } else {
+    status.textContent = "couldn't save — try again";
+  }
+}
+
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  document.getElementById("saveStatus").textContent = "typing...";
+  saveTimer = setTimeout(saveEntry, 1200);
+}
+
+function renderStreak(){
+  const el = document.getElementById("streakVal");
+  if (el) el.textContent = computeStreak();
+}
+
+function insertPrompt(){
+  const ta = document.getElementById("entryText");
+  const prompt = PROMPTS[dayOfYear() % PROMPTS.length];
+  if (!ta.value.trim()){
+    ta.value = prompt + "\n\n";
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+  } else {
+    ta.focus();
+  }
+  scheduleSave();
+}
+
+function renderAuth(){
+  document.getElementById("app").innerHTML = `
+    <div class="auth-screen">
+      <div class="auth-title">The Quiet Hours</div>
+      <div class="auth-sub">A private place to set down your day. Enter your email and we'll send a link to sign in — no password to remember.</div>
+      <div class="auth-form">
+        <input type="email" id="emailInput" placeholder="you@example.com" autocomplete="email">
+        <button class="btn" id="sendLinkBtn">Send magic link</button>
+        <div class="auth-msg" id="authMsg"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById("sendLinkBtn").addEventListener("click", () => {
+    const email = document.getElementById("emailInput").value.trim();
+    if (email) sendMagicLink(email);
+  });
+  document.getElementById("emailInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("sendLinkBtn").click();
+  });
+}
+
+function renderToday(){
+  const date = todayStr();
+  const existing = entries.find(e => e.entry_date === date);
+  selectedMood = existing ? existing.mood : null;
+  selectedWeather = existing ? existing.weather : null;
+  const oth = onThisDayEntries();
+
+  return `
+    <div class="date-line">${fmtDate(date)}</div>
+    <div class="streak">🕯️ <span id="streakVal">${computeStreak()}</span> day streak</div>
+    <div class="prompt-chip" id="promptChip">${PROMPTS[dayOfYear() % PROMPTS.length]}</div>
+    <textarea id="entryText" placeholder="Write whatever's on your mind...">${existing ? existing.content : ""}</textarea>
+
+    <div class="tag-row">
+      <div class="tag-group">
+        <div class="tag-label">Mood</div>
+        <div class="tag-options" id="moodOptions">
+          ${MOODS.map(m => `<button class="tag-btn ${selectedMood===m?'selected':''}" data-mood="${m}">${m}</button>`).join("")}
+        </div>
+      </div>
+      <div class="tag-group">
+        <div class="tag-label">Weather</div>
+        <div class="tag-options" id="weatherOptions">
+          ${WEATHERS.map(w => `<button class="tag-btn ${selectedWeather===w?'selected':''}" data-weather="${w}">${w}</button>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <div class="save-row">
+      <div class="save-status" id="saveStatus">${existing ? "saved" : ""}</div>
+    </div>
+
+    ${oth.length ? `
+      <div class="on-this-day">
+        <div class="oth-title">On this day</div>
+        ${oth.map(e => `
+          <div class="oth-card">
+            <span class="oth-year">${e.entry_date.split("-")[0]}</span>
+            ${e.content.slice(0,220)}${e.content.length>220 ? "…" : ""}
+          </div>
+        `).join("")}
+      </div>
+    ` : ""}
+  `;
+}
+
+function renderArchive(){
+  const written = entries.filter(e => e.content && e.content.trim()).sort((a,b) => b.entry_date.localeCompare(a.entry_date));
+  if (!written.length){
+    return `<div class="empty-state">Nothing written yet. Today is a good day to start.</div>`;
+  }
+  return `
+    <div class="archive-list">
+      ${written.map(e => `
+        <div class="archive-item" data-date="${e.entry_date}">
+          <div class="archive-date">
+            <span>${fmtDate(e.entry_date)}</span>
+            <span>${e.mood || ""} ${e.weather || ""}</span>
+          </div>
+          <div class="archive-preview">${e.content}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function render(){
+  if (!session){
+    renderAuth();
+    return;
+  }
+  if (!entries.length) {
+    loadEntries().then(render);
+  }
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <header>
+      <div class="wordmark">The Quiet Hours</div>
+      <nav>
+        <button id="navToday" class="${currentView==='today'?'active':''}">Today</button>
+        <button id="navArchive" class="${currentView==='archive'?'active':''}">Archive</button>
+      </nav>
+    </header>
+    <main id="mainContent">
+      ${currentView === 'today' ? renderToday() : renderArchive()}
+    </main>
+  `;
+
+  document.getElementById("navToday").addEventListener("click", () => { currentView="today"; render(); });
+  document.getElementById("navArchive").addEventListener("click", () => { currentView="archive"; render(); });
+
+  if (currentView === "today"){
+    document.getElementById("entryText").addEventListener("input", scheduleSave);
+    document.getElementById("promptChip").addEventListener("click", insertPrompt);
+    document.querySelectorAll("#moodOptions .tag-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedMood = selectedMood === btn.dataset.mood ? null : btn.dataset.mood;
+        saveEntry();
+        render();
+      });
+    });
+    document.querySelectorAll("#weatherOptions .tag-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedWeather = selectedWeather === btn.dataset.weather ? null : btn.dataset.weather;
+        saveEntry();
+        render();
+      });
+    });
+  } else {
+    document.querySelectorAll(".archive-item").forEach(item => {
+      item.addEventListener("click", () => {
+        currentView = "today";
+        const date = item.dataset.date;
+        // jump today view to show that entry by temporarily overriding todayStr behavior
+        openEntry(date);
+      });
+    });
+  }
+}
+
+let viewingDate = null;
+function openEntry(date){
+  viewingDate = date;
+  const entry = entries.find(e => e.entry_date === date);
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <header>
+      <div class="wordmark">The Quiet Hours</div>
+      <nav><button id="backBtn">← Back to Archive</button></nav>
+    </header>
+    <main>
+      <div class="date-line">${fmtDate(date)}</div>
+      <textarea id="entryTextView" placeholder="Write whatever's on your mind...">${entry ? entry.content : ""}</textarea>
+      <div class="save-row"><div class="save-status" id="saveStatusView">saved</div></div>
+    </main>
+  `;
+  document.getElementById("backBtn").addEventListener("click", () => { currentView="archive"; viewingDate=null; render(); });
+  let t = null;
+  document.getElementById("entryTextView").addEventListener("input", (e) => {
+    clearTimeout(t);
+    document.getElementById("saveStatusView").textContent = "typing...";
+    t = setTimeout(async () => {
+      const existing = entries.find(x => x.entry_date === date);
+      const { error } = await sb.from("entries").update({ content: e.target.value }).eq("id", existing.id);
+      document.getElementById("saveStatusView").textContent = error ? "couldn't save" : "saved";
+      if (!error) await loadEntries();
+    }, 1200);
+  });
+}
+
+init();
+</script>
+</body>
+</html>
