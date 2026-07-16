@@ -22,7 +22,29 @@
     --amber-dim:#c2748c;
     --plum:#a78bc4;
     --sage:#8fae82;
-    --border:rgba(237,227,240,0.1);
+    --border:rgba(var(--cream-rgb),0.1);
+    --amber-rgb:217,143,163;
+    --sage-rgb:143,174,130;
+    --plum-rgb:167,139,196;
+    --cream-rgb:237,227,240;
+    --bg-rgb:36,27,46;
+  }
+  /* seasonal accent overrides — base identity (bg/paper/cream) stays constant, only accents drift */
+  body.season-spring{
+    --amber:#e29bb5; --amber-dim:#c97e9a; --plum:#b58ecb; --sage:#8fc48a;
+    --amber-rgb:226,155,181; --sage-rgb:143,196,138; --plum-rgb:181,142,203;
+  }
+  body.season-summer{
+    --amber:#eeb35a; --amber-dim:#d4964a; --plum:#c98bd4; --sage:#9fbf7a;
+    --amber-rgb:238,179,90; --sage-rgb:159,191,122; --plum-rgb:201,139,212;
+  }
+  body.season-fall{
+    --amber:#d68a52; --amber-dim:#b8703f; --plum:#a5657a; --sage:#93985f;
+    --amber-rgb:214,138,82; --sage-rgb:147,152,95; --plum-rgb:165,101,122;
+  }
+  body.season-winter{
+    --amber:#8fb0d9; --amber-dim:#7295bd; --plum:#9b8bc4; --sage:#7fa8a0;
+    --amber-rgb:143,176,217; --sage-rgb:127,168,160; --plum-rgb:155,139,196;
   }
   .pixel{font-family:'Press Start 2P', monospace;}
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -44,7 +66,7 @@
     inset:0;
     pointer-events:none;
     z-index:0;
-    background:radial-gradient(ellipse 60% 45% at 50% 28%, rgba(217,143,163,0.16), rgba(217,143,163,0.06) 40%, rgba(36,27,46,0) 70%);
+    background:radial-gradient(ellipse 60% 45% at 50% 28%, rgba(var(--amber-rgb),0.16), rgba(var(--amber-rgb),0.06) 40%, rgba(var(--bg-rgb),0) 70%);
     animation:flicker 7s ease-in-out infinite;
   }
   @keyframes flicker{
@@ -110,6 +132,14 @@
     content:'⭐'; position:absolute; top:-11px; right:-6px; font-size:1.05rem;
     transform:rotate(16deg); filter:drop-shadow(0 2px 2px rgba(0,0,0,0.35));
   }
+  body.season-spring .page-card::before{ content:'🌸'; }
+  body.season-spring .page-card::after{ content:'🐛'; }
+  body.season-summer .page-card::before{ content:'🌻'; }
+  body.season-summer .page-card::after{ content:'🦋'; }
+  body.season-fall .page-card::before{ content:'🍂'; }
+  body.season-fall .page-card::after{ content:'🎃'; }
+  body.season-winter .page-card::before{ content:'❄️'; }
+  body.season-winter .page-card::after{ content:'🌙'; }
   .entry-divider{border-top:2px dashed var(--border); margin:14px 0 16px;}
   .divider{
     text-align:center; color:var(--amber-dim); opacity:0.85; font-size:0.6rem;
@@ -141,7 +171,7 @@
     pointer-events:none; animation:twinkle 2s ease-in-out infinite;
   }
   .sprite-aura .sprite-critter{
-    box-shadow:inset 0 -3px 4px rgba(0,0,0,0.18), 0 0 14px 4px rgba(217,143,163,0.4);
+    box-shadow:inset 0 -3px 4px rgba(0,0,0,0.18), 0 0 14px 4px rgba(var(--amber-rgb),0.4);
   }
   .sprite-caption{font-family:'Press Start 2P', monospace; font-size:0.48rem; color:var(--cream-dim); margin-top:4px; line-height:1.7;}
   .sprite-caption .edit-link{margin-left:6px;}
@@ -173,7 +203,7 @@
     font-family:'Lora',serif; font-size:1.08rem; line-height:1.85; resize:vertical;
     padding:0 0 20px; border-bottom:1px solid var(--border);
   }
-  textarea::placeholder{color:rgba(237,227,240,0.28); font-style:italic;}
+  textarea::placeholder{color:rgba(var(--cream-rgb),0.28); font-style:italic;}
   textarea:focus{outline:none;}
 
   .tag-row{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0;}
@@ -187,7 +217,7 @@
     transition:background 0.12s, border-color 0.12s, transform 0.08s;
   }
   .tag-btn:active{transform:scale(0.94);}
-  .tag-btn.selected{background:rgba(143,174,130,0.18); border-color:var(--sage); color:var(--cream);}
+  .tag-btn.selected{background:rgba(var(--sage-rgb),0.18); border-color:var(--sage); color:var(--cream);}
 
   /* freeform private tags */
   .private-tags{margin:18px 0;}
@@ -203,7 +233,7 @@
   }
   .chip-list{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
   .chip{
-    display:inline-flex; align-items:center; gap:6px; background:rgba(167,139,196,0.25);
+    display:inline-flex; align-items:center; gap:6px; background:rgba(var(--plum-rgb),0.25);
     border:1px solid var(--plum); color:var(--cream); padding:5px 6px 5px 12px;
     border-radius:14px; font-size:0.8rem; font-family:'Lora',serif;
   }
@@ -216,9 +246,9 @@
     background:var(--paper); border:1px solid var(--border); color:var(--cream-dim);
     padding:6px 11px; border-radius:8px; font-size:0.55rem; cursor:pointer; font-family:'Press Start 2P', monospace;
   }
-  .filter-pill.active{background:rgba(217,143,163,0.18); border-color:var(--amber-dim); color:var(--amber);}
+  .filter-pill.active{background:rgba(var(--amber-rgb),0.18); border-color:var(--amber-dim); color:var(--amber);}
   .archive-tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;}
-  .archive-tag-pill{font-size:0.55rem; font-family:'Press Start 2P', monospace; color:var(--sage); background:rgba(143,174,130,0.12); padding:3px 8px; border-radius:6px;}
+  .archive-tag-pill{font-size:0.55rem; font-family:'Press Start 2P', monospace; color:var(--sage); background:rgba(var(--sage-rgb),0.12); padding:3px 8px; border-radius:6px;}
   .tag-manager{background:var(--paper); border-radius:12px; padding:14px; margin-bottom:16px; display:flex; flex-direction:column; gap:8px;}
   .tag-manager-row{display:flex; gap:6px; align-items:center;}
   .tag-manager-row input{
@@ -252,7 +282,7 @@
   .mood-bar-count{font-family:'Press Start 2P', monospace; font-size:0.55rem; color:var(--cream-dim); width:28px; text-align:right;}
   .year-picker{display:flex; gap:6px; justify-content:center; margin-bottom:6px;}
   .year-pill{background:var(--paper); border:1px solid var(--border); color:var(--cream-dim); padding:6px 11px; border-radius:8px; font-family:'Press Start 2P', monospace; font-size:0.55rem; cursor:pointer;}
-  .year-pill.active{background:rgba(217,143,163,0.18); border-color:var(--amber-dim); color:var(--amber);}
+  .year-pill.active{background:rgba(var(--amber-rgb),0.18); border-color:var(--amber-dim); color:var(--amber);}
 
   .mode-toggle{display:flex; gap:6px; justify-content:center; margin:18px 0 20px;}
   .month-picker{display:flex; flex-wrap:wrap; gap:5px; justify-content:center; margin-bottom:18px;}
@@ -273,6 +303,14 @@
     content:'🍄'; position:absolute; top:-11px; right:-6px; font-size:1.2rem;
     transform:rotate(16deg); filter:drop-shadow(0 2px 2px rgba(0,0,0,0.35));
   }
+  body.season-spring .harvest-card::before{ content:'🌷'; }
+  body.season-spring .harvest-card::after{ content:'🌸'; }
+  body.season-summer .harvest-card::before{ content:'🌻'; }
+  body.season-summer .harvest-card::after{ content:'🦋'; }
+  body.season-fall .harvest-card::before{ content:'🌾'; }
+  body.season-fall .harvest-card::after{ content:'🍂'; }
+  body.season-winter .harvest-card::before{ content:'❄️'; }
+  body.season-winter .harvest-card::after{ content:'⛄'; }
   .harvest-header{text-align:center; margin-bottom:20px;}
   .harvest-title{font-family:'Silkscreen', monospace; font-weight:700; font-size:1.1rem; color:var(--amber); line-height:1.6;}
   .harvest-sub{font-family:'Press Start 2P', monospace; font-size:0.5rem; color:var(--cream-dim); margin-top:8px; line-height:1.7;}
@@ -287,9 +325,9 @@
   }
   .mini-cell.empty{background:transparent;}
   .mini-cell.level-0{background:rgba(255,255,255,0.06); color:var(--cream-dim);}
-  .mini-cell.level-1{background:rgba(143,174,130,0.35); color:var(--cream);}
-  .mini-cell.level-2{background:rgba(143,174,130,0.6); color:var(--cream);}
-  .mini-cell.level-3{background:rgba(143,174,130,0.85); color:var(--cream);}
+  .mini-cell.level-1{background:rgba(var(--sage-rgb),0.35); color:var(--cream);}
+  .mini-cell.level-2{background:rgba(var(--sage-rgb),0.6); color:var(--cream);}
+  .mini-cell.level-3{background:rgba(var(--sage-rgb),0.85); color:var(--cream);}
   .mini-cell.level-4{background:var(--sage); color:var(--cream);}
 
   .weather-tally{display:flex; flex-wrap:wrap; gap:7px;}
@@ -335,9 +373,9 @@
   .heatmap-cell{width:11px; height:11px; border-radius:2px; background:rgba(255,255,255,0.04);}
   .heatmap-cell.level-out{background:transparent;}
   .heatmap-cell.level-0{background:rgba(255,255,255,0.06);}
-  .heatmap-cell.level-1{background:rgba(143,174,130,0.35);}
-  .heatmap-cell.level-2{background:rgba(143,174,130,0.6);}
-  .heatmap-cell.level-3{background:rgba(143,174,130,0.85);}
+  .heatmap-cell.level-1{background:rgba(var(--sage-rgb),0.35);}
+  .heatmap-cell.level-2{background:rgba(var(--sage-rgb),0.6);}
+  .heatmap-cell.level-3{background:rgba(var(--sage-rgb),0.85);}
   .heatmap-cell.level-4{background:var(--sage);}
   .heatmap-legend{display:flex; align-items:center; gap:4px; margin-top:10px; font-family:'Press Start 2P', monospace; font-size:0.42rem; color:var(--cream-dim);}
   .heatmap-legend .heatmap-cell{width:9px; height:9px; margin:0 1px;}
@@ -375,6 +413,15 @@
 <div id="app"></div>
 
 <script>
+function getSeason(month){
+  // Northern Hemisphere mapping
+  if (month === 12 || month === 1 || month === 2) return "winter";
+  if (month >= 3 && month <= 5) return "spring";
+  if (month >= 6 && month <= 8) return "summer";
+  return "fall";
+}
+document.body.classList.add("season-" + getSeason(new Date().getMonth() + 1));
+
 function showFatalError(msg){
   document.getElementById("app").innerHTML = `
     <div class="auth-screen">
