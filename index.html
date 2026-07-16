@@ -254,6 +254,60 @@
   .year-pill{background:var(--paper); border:1px solid var(--border); color:var(--cream-dim); padding:6px 11px; border-radius:8px; font-family:'Press Start 2P', monospace; font-size:0.55rem; cursor:pointer;}
   .year-pill.active{background:rgba(217,143,163,0.18); border-color:var(--amber-dim); color:var(--amber);}
 
+  .mode-toggle{display:flex; gap:6px; justify-content:center; margin:18px 0 20px;}
+  .month-picker{display:flex; flex-wrap:wrap; gap:5px; justify-content:center; margin-bottom:18px;}
+
+  .harvest-card{
+    background:
+      radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px) 0 0/16px 16px,
+      var(--paper);
+    border-radius:10px; padding:24px 20px 20px; position:relative;
+    box-shadow:0 6px 22px rgba(10,6,14,0.35); border:3px solid var(--paper-raised);
+    margin-bottom:20px;
+  }
+  .harvest-card::before{
+    content:'🌾'; position:absolute; top:-12px; left:-8px; font-size:1.4rem;
+    transform:rotate(-14deg); filter:drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+  }
+  .harvest-card::after{
+    content:'🍄'; position:absolute; top:-11px; right:-6px; font-size:1.2rem;
+    transform:rotate(16deg); filter:drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+  }
+  .harvest-header{text-align:center; margin-bottom:20px;}
+  .harvest-title{font-family:'Silkscreen', monospace; font-weight:700; font-size:1.1rem; color:var(--amber); line-height:1.6;}
+  .harvest-sub{font-family:'Press Start 2P', monospace; font-size:0.5rem; color:var(--cream-dim); margin-top:8px; line-height:1.7;}
+
+  .mini-month-grid{
+    display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; margin:20px 0;
+  }
+  .mini-cell{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-radius:5px; font-family:'Press Start 2P', monospace; font-size:0.42rem;
+    color:var(--cream-dim); background:rgba(255,255,255,0.06);
+  }
+  .mini-cell.empty{background:transparent;}
+  .mini-cell.level-0{background:rgba(255,255,255,0.06); color:var(--cream-dim);}
+  .mini-cell.level-1{background:rgba(143,174,130,0.35); color:var(--cream);}
+  .mini-cell.level-2{background:rgba(143,174,130,0.6); color:var(--cream);}
+  .mini-cell.level-3{background:rgba(143,174,130,0.85); color:var(--cream);}
+  .mini-cell.level-4{background:var(--sage); color:var(--cream);}
+
+  .weather-tally{display:flex; flex-wrap:wrap; gap:7px;}
+  .weather-chip{
+    background:var(--paper-raised); border:1px solid var(--border); color:var(--cream-dim);
+    padding:6px 11px; border-radius:14px; font-size:0.8rem; font-family:'Lora',serif;
+  }
+
+  .highlight-entry{background:var(--paper-raised); border-radius:12px; padding:14px 16px;}
+  .highlight-date{font-family:'Press Start 2P', monospace; font-size:0.48rem; color:var(--amber-dim); margin-bottom:8px; line-height:1.6;}
+  .highlight-text{font-family:'Caveat', cursive; font-size:1.15rem; color:var(--cream-dim); line-height:1.5;}
+
+  .sprout-line{
+    display:flex; align-items:center; gap:8px; justify-content:center; margin-top:22px;
+    padding-top:18px; border-top:2px dashed var(--border);
+    font-family:'Press Start 2P', monospace; font-size:0.48rem; color:var(--cream-dim); line-height:1.8; text-align:center;
+  }
+
   .heatmap-wrap{overflow-x:auto; padding-bottom:4px;}
   .heatmap-months{display:grid; grid-auto-flow:column; grid-auto-columns:13px; margin-bottom:4px;}
   .heatmap-month-label{font-family:'Press Start 2P', monospace; font-size:0.42rem; color:var(--cream-dim); white-space:nowrap;}
@@ -623,14 +677,32 @@ function computeLongestStreak(dates){
   return longest;
 }
 
+let wrappedMode = "year";
+let wrappedMonth = null;
+
 function renderWrapped(){
   const written = entries.filter(e => e.content && e.content.trim());
   if (!written.length){
-    return `<div class="empty-state">Write a few entries and your year will start taking shape here.</div>`;
+    return `<div class="empty-state">Write a few entries and your journal will start taking shape here.</div>`;
   }
   const years = Array.from(new Set(written.map(e => e.entry_date.slice(0,4)))).sort().reverse();
   if (!wrappedYear || !years.includes(wrappedYear)) wrappedYear = years[0];
+  if (!wrappedMonth) wrappedMonth = new Date().getMonth() + 1;
 
+  return `
+    <div class="wrapped-hero">
+      <div class="wrapped-year">${wrappedMode === "year" ? "Your year in" : "Your month in"}</div>
+      <div class="wrapped-title">The Quiet Hours</div>
+    </div>
+    <div class="mode-toggle">
+      <span class="year-pill ${wrappedMode==='year'?'active':''}" data-mode="year">🌾 Year</span>
+      <span class="year-pill ${wrappedMode==='month'?'active':''}" data-mode="month">🧺 Month</span>
+    </div>
+    ${wrappedMode === "year" ? renderYearWrapped(written, years) : renderMonthlyRecap(written, years)}
+  `;
+}
+
+function renderYearWrapped(written, years){
   const yearEntries = written.filter(e => e.entry_date.startsWith(wrappedYear));
   if (!yearEntries.length){
     return `
@@ -660,10 +732,6 @@ function renderWrapped(){
   const heatWeeks = buildHeatmapWeeks(parseInt(wrappedYear,10), wordsByDate);
 
   return `
-    <div class="wrapped-hero">
-      <div class="wrapped-year">Your year in</div>
-      <div class="wrapped-title">The Quiet Hours</div>
-    </div>
     ${years.length > 1 ? `<div class="year-picker">${years.map(y => `<span class="year-pill ${y===wrappedYear?'active':''}" data-year="${y}">${y}</span>`).join("")}</div>` : ""}
 
     <div class="wrapped-section">
@@ -726,7 +794,136 @@ function renderWrapped(){
   `;
 }
 
-let authMode = "signin"; // or "signup"
+function buildMonthGrid(year, month, wordsByDate){
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const firstWeekday = new Date(year, month-1, 1).getDay();
+  const cells = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++){
+    const ds = year+"-"+String(month).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    cells.push({ date: ds, day: d, words: wordsByDate[ds] || 0 });
+  }
+  return cells;
+}
+
+function renderMonthlyRecap(written, years){
+  const yearNum = parseInt(wrappedYear, 10);
+  const monthPrefix = wrappedYear + "-" + String(wrappedMonth).padStart(2,"0");
+  const monthEntries = written.filter(e => e.entry_date.startsWith(monthPrefix));
+  const daysInMonth = new Date(yearNum, wrappedMonth, 0).getDate();
+  const monthName = new Date(yearNum, wrappedMonth-1, 1).toLocaleDateString('en-US', {month:'long'});
+
+  const pickerRow = `
+    ${years.length > 1 ? `<div class="year-picker">${years.map(y => `<span class="year-pill ${y===wrappedYear?'active':''}" data-year="${y}">${y}</span>`).join("")}</div>` : ""}
+    <div class="month-picker">
+      ${MONTH_ABBR.map((m,i) => `<span class="year-pill ${(i+1)===wrappedMonth?'active':''}" data-monthnum="${i+1}">${m}</span>`).join("")}
+    </div>
+  `;
+
+  if (!monthEntries.length){
+    return `${pickerRow}<div class="empty-state">🌱 Nothing planted yet in ${monthName} ${wrappedYear}.</div>`;
+  }
+
+  const totalWords = monthEntries.reduce((sum,e) => sum + e.content.trim().split(/\s+/).filter(Boolean).length, 0);
+  const dates = new Set(monthEntries.map(e => e.entry_date));
+  const longestStreak = computeLongestStreak(dates);
+
+  const moodCounts = {};
+  monthEntries.forEach(e => { if (e.mood) e.mood.split(", ").forEach(m => { moodCounts[m]=(moodCounts[m]||0)+1; }); });
+  const topMoods = Object.entries(moodCounts).sort((a,b) => b[1]-a[1]);
+  const maxMoodCount = topMoods.length ? topMoods[0][1] : 1;
+
+  const weatherCounts = {};
+  monthEntries.forEach(e => { if (e.weather) weatherCounts[e.weather] = (weatherCounts[e.weather]||0)+1; });
+  const topWeather = Object.entries(weatherCounts).sort((a,b) => b[1]-a[1]);
+
+  const tagCounts = {};
+  monthEntries.forEach(e => { (e.tags||[]).forEach(t => { tagCounts[t]=(tagCounts[t]||0)+1; }); });
+  const topTags = Object.entries(tagCounts).sort((a,b) => b[1]-a[1]).slice(0,8);
+
+  const longestEntry = monthEntries.reduce((a,b) => {
+    const aw = a.content.trim().split(/\s+/).filter(Boolean).length;
+    const bw = b.content.trim().split(/\s+/).filter(Boolean).length;
+    return bw > aw ? b : a;
+  });
+  const longestEntryWords = longestEntry.content.trim().split(/\s+/).filter(Boolean).length;
+
+  const wordsByDate = {};
+  monthEntries.forEach(e => { wordsByDate[e.entry_date] = e.content.trim().split(/\s+/).filter(Boolean).length; });
+  const monthCells = buildMonthGrid(yearNum, wrappedMonth, wordsByDate);
+
+  const monthStartStr = monthPrefix + "-01";
+  const entriesBeforeMonth = written.filter(e => e.entry_date < monthStartStr).length;
+  const entriesThroughMonth = entriesBeforeMonth + monthEntries.length;
+  const stageBefore = getSpriteStage(entriesBeforeMonth);
+  const stageAfter = getSpriteStage(entriesThroughMonth);
+  const sproutLine = stageBefore.idx !== stageAfter.idx
+    ? `${spriteName} grew from ${stageBefore.name} to ${stageAfter.name} this month! ${renderSpriteHTML(24, stageAfter.idx)}`
+    : `${spriteName} is currently a ${stageAfter.name} ${renderSpriteHTML(24, stageAfter.idx)}`;
+
+  return `
+    ${pickerRow}
+
+    <div class="harvest-card">
+      <div class="harvest-header">
+        <div class="harvest-title">🧺 ${monthName} Harvest</div>
+        <div class="harvest-sub">${monthEntries.length} of ${daysInMonth} days planted</div>
+      </div>
+
+      <div class="wrapped-grid">
+        <div class="wrapped-stat"><div class="wrapped-stat-num pixel">${monthEntries.length}</div><div class="wrapped-stat-label">entries</div></div>
+        <div class="wrapped-stat"><div class="wrapped-stat-num pixel">${totalWords.toLocaleString()}</div><div class="wrapped-stat-label">words</div></div>
+        <div class="wrapped-stat"><div class="wrapped-stat-num pixel">${longestStreak}</div><div class="wrapped-stat-label">longest streak</div></div>
+        <div class="wrapped-stat"><div class="wrapped-stat-num">${topMoods[0] ? topMoods[0][0] : "—"}</div><div class="wrapped-stat-label">top mood</div></div>
+      </div>
+
+      <div class="mini-month-grid">
+        ${monthCells.map(c => c ? `<div class="mini-cell level-${heatLevel(c.words)}" title="${c.date} · ${c.words} words">${c.day}</div>` : `<div class="mini-cell empty"></div>`).join("")}
+      </div>
+
+      ${topMoods.length ? `
+        <div class="wrapped-section">
+          <div class="wrapped-section-title">Moods this month</div>
+          ${topMoods.map(([m,c]) => `
+            <div class="mood-bar-row">
+              <span>${m}</span>
+              <div class="mood-bar-track"><div class="mood-bar-fill" style="width:${(c/maxMoodCount)*100}%"></div></div>
+              <span class="mood-bar-count">${c}</span>
+            </div>
+          `).join("")}
+        </div>
+      ` : ""}
+
+      ${topWeather.length ? `
+        <div class="wrapped-section">
+          <div class="wrapped-section-title">Weather this month</div>
+          <div class="weather-tally">
+            ${topWeather.map(([w,c]) => `<span class="weather-chip">${w} ×${c}</span>`).join("")}
+          </div>
+        </div>
+      ` : ""}
+
+      ${topTags.length ? `
+        <div class="wrapped-section">
+          <div class="wrapped-section-title">Top tags</div>
+          <div class="weather-tally">
+            ${topTags.map(([t,c]) => `<span class="weather-chip">${t} ×${c}</span>`).join("")}
+          </div>
+        </div>
+      ` : ""}
+
+      <div class="wrapped-section">
+        <div class="wrapped-section-title">Longest entry</div>
+        <div class="highlight-entry">
+          <div class="highlight-date">${new Date(longestEntry.entry_date).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${longestEntryWords} words</div>
+          <div class="highlight-text">${longestEntry.content.slice(0,240)}${longestEntry.content.length>240?"…":""}</div>
+        </div>
+      </div>
+
+      <div class="sprout-line">${sproutLine}</div>
+    </div>
+  `;
+}
 
 function renderAuth(){
   document.getElementById("app").innerHTML = `
@@ -1039,8 +1236,14 @@ function render(){
       });
     });
   } else if (currentView === "wrapped") {
-    document.querySelectorAll(".year-pill").forEach(pill => {
+    document.querySelectorAll(".year-pill[data-year]").forEach(pill => {
       pill.addEventListener("click", () => { wrappedYear = pill.dataset.year; render(); });
+    });
+    document.querySelectorAll(".year-pill[data-monthnum]").forEach(pill => {
+      pill.addEventListener("click", () => { wrappedMonth = parseInt(pill.dataset.monthnum, 10); render(); });
+    });
+    document.querySelectorAll(".year-pill[data-mode]").forEach(pill => {
+      pill.addEventListener("click", () => { wrappedMode = pill.dataset.mode; render(); });
     });
   }
 }
