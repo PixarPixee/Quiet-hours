@@ -375,9 +375,48 @@
 <div id="app"></div>
 
 <script>
-const SUPABASE_URL = "https://oeoxmalwkauaiikhqazs.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lb3htYWx3a2F1YWlpa2hxYXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMTM1MTIsImV4cCI6MjA5OTY4OTUxMn0.EgVcBXdvMBlPemYp-XDa0Oj5jNDgFCmKa60CdeDCidk";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function showFatalError(msg){
+  document.getElementById("app").innerHTML = `
+    <div class="auth-screen">
+      <span class="sprite-critter" style="width:44px;height:44px;"></span>
+      <div class="auth-title">Something's stuck</div>
+      <div class="auth-sub">${msg}</div>
+      <button class="btn" onclick="window.location.reload()">Try reloading</button>
+    </div>
+  `;
+}
+
+// Safe storage: falls back to an in-memory store if localStorage is blocked
+// (can happen in some "Add to Home Screen" contexts on iOS)
+function makeSafeStorage(){
+  try {
+    const testKey = "__qh_test__";
+    window.localStorage.setItem(testKey, "1");
+    window.localStorage.removeItem(testKey);
+    return window.localStorage;
+  } catch (e) {
+    console.warn("localStorage unavailable, using in-memory fallback:", e);
+    const mem = {};
+    return {
+      getItem: k => (k in mem ? mem[k] : null),
+      setItem: (k,v) => { mem[k] = v; },
+      removeItem: k => { delete mem[k]; }
+    };
+  }
+}
+
+let sb;
+try {
+  if (typeof supabase === "undefined") throw new Error("Supabase library failed to load — check your connection and reload.");
+  const SUPABASE_URL = "https://oeoxmalwkauaiikhqazs.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lb3htYWx3a2F1YWlpa2hxYXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMTM1MTIsImV4cCI6MjA5OTY4OTUxMn0.EgVcBXdvMBlPemYp-XDa0Oj5jNDgFCmKa60CdeDCidk";
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { storage: makeSafeStorage(), persistSession: true, autoRefreshToken: true }
+  });
+} catch (e) {
+  console.error("Fatal init error:", e);
+  showFatalError(e.message || "The app failed to start. Please reload.");
+}
 
 const PROMPTS = [
   "What's sitting heaviest on your mind right now?",
@@ -493,13 +532,18 @@ function resetMoods(){
 }
 
 async function init(){
-  const { data } = await sb.auth.getSession();
-  session = data.session;
-  sb.auth.onAuthStateChange((_event, sess) => {
-    session = sess;
+  try {
+    const { data } = await sb.auth.getSession();
+    session = data.session;
+    sb.auth.onAuthStateChange((_event, sess) => {
+      session = sess;
+      render();
+    });
     render();
-  });
-  render();
+  } catch (e) {
+    console.error("Init error:", e);
+    showFatalError("Couldn't reach the sign-in service. Check your connection and reload.");
+  }
 }
 
 async function signIn(email, password){
@@ -1420,7 +1464,7 @@ function openEntry(date){
   });
 }
 
-init();
+if (sb) init();
 </script>
 </body>
 </html>
