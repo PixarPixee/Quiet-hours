@@ -308,6 +308,26 @@
     font-family:'Press Start 2P', monospace; font-size:0.48rem; color:var(--cream-dim); line-height:1.8; text-align:center;
   }
 
+  .achievement-toast{
+    position:fixed; left:50%; bottom:-100px; transform:translateX(-50%);
+    display:flex; align-items:center; gap:12px; background:var(--paper);
+    border:3px solid var(--amber-dim); border-radius:12px; padding:14px 18px;
+    box-shadow:0 8px 26px rgba(10,6,14,0.5); z-index:1000; max-width:88vw;
+    transition:bottom 0.4s ease, opacity 0.4s ease; opacity:0;
+  }
+  .achievement-toast.show{ bottom:24px; opacity:1; }
+  .achievement-toast-icon{ font-size:1.6rem; animation:spriteBob 1.2s ease-in-out infinite; }
+  .achievement-toast-text{ font-family:'Press Start 2P', monospace; font-size:0.5rem; color:var(--cream); line-height:1.8; }
+
+  .trophy-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin:16px 0 4px;}
+  .trophy{
+    display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px;
+    background:var(--paper); border-radius:10px; border:2px solid var(--paper-raised);
+  }
+  .trophy.locked{opacity:0.35;}
+  .trophy-icon{font-size:1.3rem;}
+  .trophy-label{font-family:'Press Start 2P', monospace; font-size:0.38rem; color:var(--cream-dim); text-align:center; line-height:1.5;}
+
   .heatmap-wrap{overflow-x:auto; padding-bottom:4px;}
   .heatmap-months{display:grid; grid-auto-flow:column; grid-auto-columns:13px; margin-bottom:4px;}
   .heatmap-month-label{font-family:'Press Start 2P', monospace; font-size:0.42rem; color:var(--cream-dim); white-space:nowrap;}
@@ -383,6 +403,9 @@ let userMoods = [...DEFAULT_MOODS];
 let settingsLoaded = false;
 let spriteName = "Sprite";
 let spriteRenameOpen = false;
+let unlockedAchievements = new Set();
+let toastQueue = [];
+let toastShowing = false;
 let moodManagerOpen = false;
 
 let session = null;
@@ -416,7 +439,7 @@ function dayOfYear(){
 }
 
 async function loadSettings(){
-  const { data } = await sb.from("user_settings").select("moods, sprite_name").eq("user_id", session.user.id).maybeSingle();
+  const { data } = await sb.from("user_settings").select("moods, sprite_name, unlocked_achievements").eq("user_id", session.user.id).maybeSingle();
   if (data && data.moods && data.moods.length){
     userMoods = data.moods;
   } else {
@@ -424,7 +447,9 @@ async function loadSettings(){
     await sb.from("user_settings").upsert({ user_id: session.user.id, moods: userMoods });
   }
   spriteName = (data && data.sprite_name) ? data.sprite_name : "Sprite";
+  unlockedAchievements = new Set((data && data.unlocked_achievements) ? data.unlocked_achievements : []);
   settingsLoaded = true;
+  checkAchievements();
 }
 
 async function saveUserMoods(){
@@ -566,6 +591,7 @@ async function saveEntry(){
       : "saved · " + new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
   }
   renderStreak();
+  if (!error) checkAchievements();
 }
 
 function scheduleSave(){
@@ -604,6 +630,72 @@ const SPRITE_STAGES = [
   { min: 100, name: "Blooming", size: 38 },
   { min: 300, name: "Full Bloom", size: 44 }
 ];
+
+const ACHIEVEMENTS = [
+  { id: "first_entry", label: "First entry planted", icon: "🌱", check: s => s.totalEntries >= 1 },
+  { id: "streak_3", label: "3-day streak", icon: "🔥", check: s => s.longestStreakEver >= 3 },
+  { id: "streak_7", label: "7-day streak", icon: "🔥", check: s => s.longestStreakEver >= 7 },
+  { id: "streak_30", label: "30-day streak", icon: "🔥", check: s => s.longestStreakEver >= 30 },
+  { id: "streak_100", label: "100-day streak", icon: "🔥", check: s => s.longestStreakEver >= 100 },
+  { id: "entries_10", label: "10 entries written", icon: "📖", check: s => s.totalEntries >= 10 },
+  { id: "entries_50", label: "50 entries written", icon: "📖", check: s => s.totalEntries >= 50 },
+  { id: "entries_100", label: "100 entries written", icon: "📖", check: s => s.totalEntries >= 100 },
+  { id: "entries_365", label: "365 entries — a full year of days", icon: "🏆", check: s => s.totalEntries >= 365 },
+  { id: "long_entry", label: "500+ words in one sitting", icon: "✍️", check: s => s.maxEntryWords >= 500 },
+  { id: "first_tag", label: "First private tag added", icon: "🏷️", check: s => s.hasTags },
+  { id: "first_mood", label: "First mood logged", icon: "💭", check: s => s.hasMood },
+  { id: "sprite_sprout", label: "Sprite grew into a Sprout", icon: "🌿", check: s => s.spriteStageIdx >= 1 },
+  { id: "sprite_budding", label: "Sprite is Budding", icon: "🌸", check: s => s.spriteStageIdx >= 2 },
+  { id: "sprite_blooming", label: "Sprite is Blooming", icon: "✨", check: s => s.spriteStageIdx >= 3 },
+  { id: "sprite_fullbloom", label: "Sprite reached Full Bloom", icon: "🌾", check: s => s.spriteStageIdx >= 4 }
+];
+
+function computeAchievementStats(){
+  const written = entries.filter(e => e.content && e.content.trim());
+  const totalEntries = written.length;
+  const allDates = new Set(written.map(e => e.entry_date));
+  const longestStreakEver = computeLongestStreak(allDates);
+  const maxEntryWords = written.reduce((max,e) => Math.max(max, e.content.trim().split(/\s+/).filter(Boolean).length), 0);
+  const hasTags = written.some(e => e.tags && e.tags.length);
+  const hasMood = written.some(e => e.mood);
+  const spriteStageIdx = getSpriteStage(totalEntries).idx;
+  return { totalEntries, longestStreakEver, maxEntryWords, hasTags, hasMood, spriteStageIdx };
+}
+
+function checkAchievements(){
+  const stats = computeAchievementStats();
+  const newlyUnlocked = [];
+  ACHIEVEMENTS.forEach(a => {
+    if (!unlockedAchievements.has(a.id) && a.check(stats)){
+      unlockedAchievements.add(a.id);
+      newlyUnlocked.push(a);
+    }
+  });
+  if (newlyUnlocked.length){
+    sb.from("user_settings").upsert({ user_id: session.user.id, unlocked_achievements: Array.from(unlockedAchievements) });
+    newlyUnlocked.forEach(a => queueToast(a));
+  }
+}
+
+function queueToast(achievement){
+  toastQueue.push(achievement);
+  showNextToast();
+}
+
+function showNextToast(){
+  if (toastShowing || !toastQueue.length) return;
+  toastShowing = true;
+  const a = toastQueue.shift();
+  const el = document.createElement("div");
+  el.className = "achievement-toast";
+  el.innerHTML = `<span class="achievement-toast-icon">${a.icon}</span><span class="achievement-toast-text">Achievement unlocked!<br>${a.label}</span>`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => {
+    el.classList.remove("show");
+    setTimeout(() => { el.remove(); toastShowing = false; showNextToast(); }, 400);
+  }, 3400);
+}
 
 function getSpriteStage(totalEntries){
   let idx = 0;
@@ -694,6 +786,19 @@ function renderWrapped(){
       <div class="wrapped-year">${wrappedMode === "year" ? "Your year in" : "Your month in"}</div>
       <div class="wrapped-title">The Quiet Hours</div>
     </div>
+
+    <div class="wrapped-section">
+      <div class="wrapped-section-title">🏆 Trophy Case</div>
+      <div class="trophy-grid">
+        ${ACHIEVEMENTS.map(a => `
+          <div class="trophy ${unlockedAchievements.has(a.id) ? "" : "locked"}">
+            <div class="trophy-icon">${unlockedAchievements.has(a.id) ? a.icon : "🔒"}</div>
+            <div class="trophy-label">${a.label}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
     <div class="mode-toggle">
       <span class="year-pill ${wrappedMode==='year'?'active':''}" data-mode="year">🌾 Year</span>
       <span class="year-pill ${wrappedMode==='month'?'active':''}" data-mode="month">🧺 Month</span>
