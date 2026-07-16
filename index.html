@@ -542,7 +542,7 @@ async function init(){
     render();
   } catch (e) {
     console.error("Init error:", e);
-    showFatalError("Couldn't reach the sign-in service. Check your connection and reload.");
+    showFatalError("Couldn't reach the sign-in service. Details: " + (e && (e.message || e.name || String(e))));
   }
 }
 
