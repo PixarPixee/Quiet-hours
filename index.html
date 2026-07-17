@@ -487,6 +487,8 @@ const DEFAULT_MOODS = ["🌙 calm","🌻 joyful","🍄 dreamy","🐓 restless","
 const WEATHERS = ["☀️ sunny","🌦️ showery","⛈️ stormy","❄️ snowy","🌫️ misty","🍃 breezy"];
 let userMoods = [...DEFAULT_MOODS];
 let settingsLoaded = false;
+let entriesLoaded = false;
+let achievementsCheckedOnLoad = false;
 let spriteName = "Sprite";
 let spriteRenameOpen = false;
 let unlockedAchievements = new Set();
@@ -535,7 +537,6 @@ async function loadSettings(){
   spriteName = (data && data.sprite_name) ? data.sprite_name : "Sprite";
   unlockedAchievements = new Set((data && data.unlocked_achievements) ? data.unlocked_achievements : []);
   settingsLoaded = true;
-  checkAchievements();
 }
 
 async function saveUserMoods(){
@@ -625,6 +626,7 @@ async function loadEntries(){
     .select("*")
     .order("entry_date", { ascending: false });
   if (!error) entries = data || [];
+  entriesLoaded = true;
 }
 
 function computeStreak(){
@@ -753,7 +755,7 @@ function computeAchievementStats(){
   return { totalEntries, longestStreakEver, maxEntryWords, hasTags, hasMood, spriteStageIdx };
 }
 
-function checkAchievements(){
+async function checkAchievements(){
   const stats = computeAchievementStats();
   const newlyUnlocked = [];
   ACHIEVEMENTS.forEach(a => {
@@ -763,7 +765,14 @@ function checkAchievements(){
     }
   });
   if (newlyUnlocked.length){
-    sb.from("user_settings").upsert({ user_id: session.user.id, unlocked_achievements: Array.from(unlockedAchievements) });
+    const { error } = await sb.from("user_settings").upsert({ user_id: session.user.id, unlocked_achievements: Array.from(unlockedAchievements) });
+    if (error){
+      console.error("Failed to save achievements, will retry next check:", error);
+      // roll back so these get re-evaluated (and re-saved) on the next check instead of
+      // being shown as unlocked locally while never actually persisted
+      newlyUnlocked.forEach(a => unlockedAchievements.delete(a.id));
+      return;
+    }
     newlyUnlocked.forEach(a => queueToast(a));
   }
 }
@@ -1294,11 +1303,15 @@ function render(){
     renderAuth();
     return;
   }
-  if (!entries.length) {
+  if (!entries.length && !entriesLoaded) {
     loadEntries().then(render);
   }
   if (!settingsLoaded) {
     loadSettings().then(render);
+  }
+  if (entriesLoaded && settingsLoaded && !achievementsCheckedOnLoad){
+    achievementsCheckedOnLoad = true;
+    checkAchievements();
   }
   const app = document.getElementById("app");
   app.innerHTML = `
