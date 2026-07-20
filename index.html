@@ -378,6 +378,11 @@
   .heatmap-cell.level-3{background:rgba(var(--sage-rgb),0.85);}
   .heatmap-cell.level-4{background:var(--sage);}
   .heatmap-legend{display:flex; align-items:center; gap:4px; margin-top:10px; font-family:'Press Start 2P', monospace; font-size:0.42rem; color:var(--cream-dim);}
+  .heatmap-tap-info{
+    font-family:'Press Start 2P', monospace; font-size:0.48rem; color:var(--amber-dim);
+    margin-top:10px; line-height:1.8; min-height:1.8em;
+  }
+  .heatmap-cell[data-date], .mini-cell[data-date]{cursor:pointer;}
   .heatmap-legend .heatmap-cell{width:9px; height:9px; margin:0 1px;}
 
   .save-row{display:flex; align-items:center; justify-content:space-between; margin-top:18px; gap:12px;}
@@ -527,15 +532,23 @@ function dayOfYear(){
 }
 
 async function loadSettings(){
-  const { data } = await sb.from("user_settings").select("moods, sprite_name, unlocked_achievements").eq("user_id", session.user.id).maybeSingle();
-  if (data && data.moods && data.moods.length){
-    userMoods = data.moods;
+  const { data, error } = await sb.from("user_settings").select("moods, sprite_name, unlocked_achievements").eq("user_id", session.user.id).maybeSingle();
+  if (error){
+    console.error("Failed to load settings — keeping current in-memory state instead of resetting it:", error);
+    settingsLoaded = true;
+    return;
+  }
+  if (data){
+    userMoods = (data.moods && data.moods.length) ? data.moods : [...DEFAULT_MOODS];
+    spriteName = data.sprite_name || "Sprite";
+    unlockedAchievements = new Set(data.unlocked_achievements || []);
   } else {
+    // no row yet — genuinely a brand-new account, not a fetch failure
     userMoods = [...DEFAULT_MOODS];
+    spriteName = "Sprite";
+    unlockedAchievements = new Set();
     await sb.from("user_settings").upsert({ user_id: session.user.id, moods: userMoods });
   }
-  spriteName = (data && data.sprite_name) ? data.sprite_name : "Sprite";
-  unlockedAchievements = new Set((data && data.unlocked_achievements) ? data.unlocked_achievements : []);
   settingsLoaded = true;
 }
 
@@ -950,10 +963,13 @@ function renderYearWrapped(written, years){
         </div>
         <div class="heatmap">
           ${heatWeeks.map(week => week.map(day =>
-            `<div class="heatmap-cell level-${day.inYear ? heatLevel(day.words) : 'out'}" title="${day.inYear ? day.date + ' · ' + day.words + ' words' : ''}"></div>`
+            day.inYear
+              ? `<div class="heatmap-cell level-${heatLevel(day.words)}" data-date="${day.date}" data-words="${day.words}" title="${day.date} · ${day.words} words"></div>`
+              : `<div class="heatmap-cell level-out"></div>`
           ).join("")).join("")}
         </div>
       </div>
+      <div class="heatmap-tap-info" id="yearHeatmapInfo">tap a square to see that day's word count</div>
       <div class="heatmap-legend">
         <span>soil</span>
         <span class="heatmap-cell level-0"></span>
@@ -1083,8 +1099,9 @@ function renderMonthlyRecap(written, years){
       </div>
 
       <div class="mini-month-grid">
-        ${monthCells.map(c => c ? `<div class="mini-cell level-${heatLevel(c.words)}" title="${c.date} · ${c.words} words">${c.day}</div>` : `<div class="mini-cell empty"></div>`).join("")}
+        ${monthCells.map(c => c ? `<div class="mini-cell level-${heatLevel(c.words)}" data-date="${c.date}" data-words="${c.words}" title="${c.date} · ${c.words} words">${c.day}</div>` : `<div class="mini-cell empty"></div>`).join("")}
       </div>
+      <div class="heatmap-tap-info" id="monthHeatmapInfo">tap a day to see that day's word count</div>
 
       ${topMoods.length ? `
         <div class="wrapped-section">
@@ -1455,6 +1472,23 @@ function render(){
     });
     document.querySelectorAll(".year-pill[data-mode]").forEach(pill => {
       pill.addEventListener("click", () => { wrappedMode = pill.dataset.mode; render(); });
+    });
+    const cellInfoText = (ds, words) => {
+      const [y,m,d] = ds.split("-").map(Number);
+      const label = new Date(y, m-1, d).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+      return `${label} · ${words} ${words === 1 ? "word" : "words"}`;
+    };
+    document.querySelectorAll(".heatmap-cell[data-date]").forEach(cell => {
+      cell.addEventListener("click", () => {
+        const info = document.getElementById("yearHeatmapInfo");
+        if (info) info.textContent = cellInfoText(cell.dataset.date, cell.dataset.words);
+      });
+    });
+    document.querySelectorAll(".mini-cell[data-date]").forEach(cell => {
+      cell.addEventListener("click", () => {
+        const info = document.getElementById("monthHeatmapInfo");
+        if (info) info.textContent = cellInfoText(cell.dataset.date, cell.dataset.words);
+      });
     });
   }
 }
